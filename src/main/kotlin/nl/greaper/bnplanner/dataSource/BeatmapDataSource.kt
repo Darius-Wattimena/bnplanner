@@ -46,10 +46,10 @@ class BeatmapDataSource(val database: MongoDatabase) {
                         if (filter.status.contains(BeatmapStatus.AwaitingResponse)) Beatmap::status eq BeatmapStatus.AwaitingResponse else null,
                         if (filter.status.contains(BeatmapStatus.Bubbled)) Beatmap::status eq BeatmapStatus.Bubbled else null,
                         if (filter.status.contains(BeatmapStatus.Qualified)) Beatmap::status eq BeatmapStatus.Qualified else null,
-                        if (filter.hideRanked != true && filter.status.contains(BeatmapStatus.Ranked)) Beatmap::status eq BeatmapStatus.Ranked else null,
+                        if (filter.status.contains(BeatmapStatus.Ranked)) Beatmap::status eq BeatmapStatus.Ranked else null,
                         if (filter.status.contains(BeatmapStatus.Popped)) Beatmap::status eq BeatmapStatus.Popped else null,
                         if (filter.status.contains(BeatmapStatus.Disqualified)) Beatmap::status eq BeatmapStatus.Disqualified else null,
-                        if (filter.hideGraved != true && filter.status.contains(BeatmapStatus.Graved)) Beatmap::status eq BeatmapStatus.Graved else null
+                        if (filter.status.contains(BeatmapStatus.Graved)) Beatmap::status eq BeatmapStatus.Graved else null
                 ))
         )
 
