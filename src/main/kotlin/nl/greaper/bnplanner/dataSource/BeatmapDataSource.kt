@@ -1,0 +1,79 @@
+package nl.greaper.bnplanner.dataSource
+
+import com.mongodb.client.MongoCollection
+import com.mongodb.client.MongoDatabase
+import nl.greaper.bnplanner.exception.BeatmapException
+import nl.greaper.bnplanner.model.FindResponse
+import nl.greaper.bnplanner.model.beatmap.Beatmap
+import nl.greaper.bnplanner.model.beatmap.BeatmapStatus
+import nl.greaper.bnplanner.model.filter.BeatmapFilter
+import nl.greaper.bnplanner.util.quote
+import org.litote.kmongo.*
+import org.springframework.stereotype.Component
+
+@Component
+class BeatmapDataSource(val database: MongoDatabase) {
+    fun getCollection(): MongoCollection<Beatmap> = database.getCollection()
+
+    fun save(beatmap: Beatmap) = getCollection().save(beatmap)
+
+    fun exists(beatmapId: Long): Boolean {
+        return getCollection().countDocuments(
+                Beatmap::osuId eq beatmapId
+        ) > 0
+    }
+
+    fun find(beatmapSetId: Long): Beatmap {
+        return getCollection().findOne(
+                Beatmap::osuId eq beatmapSetId
+        ) ?: throw BeatmapException("Beatmap not registered on the planner")
+    }
+
+    fun findAll(filter: BeatmapFilter): FindResponse<Beatmap> {
+        val collection = getCollection()
+
+        val query = and(
+                and(listOfNotNull(
+                        if (filter.artist != null) { Beatmap::artist regex quote(filter.artist).toRegex(RegexOption.IGNORE_CASE) } else null,
+                        if (filter.title != null) { Beatmap::title regex quote(filter.title).toRegex(RegexOption.IGNORE_CASE) } else null,
+                        if (filter.mapper != null) { Beatmap::mapper regex quote(filter.mapper).toRegex(RegexOption.IGNORE_CASE) } else null,
+                        if (filter.hideRanked != null && filter.hideRanked) {Beatmap::status ne BeatmapStatus.Ranked} else null,
+                        if (filter.hideGraved != null && filter.hideGraved) {Beatmap::status ne BeatmapStatus.Graved} else null
+                )),
+                or(listOfNotNull(
+                        if (filter.status.contains(BeatmapStatus.WorkInProgress)) Beatmap::status eq BeatmapStatus.WorkInProgress else null,
+                        if (filter.status.contains(BeatmapStatus.Pending)) Beatmap::status eq BeatmapStatus.Pending else null,
+                        if (filter.status.contains(BeatmapStatus.AwaitingResponse)) Beatmap::status eq BeatmapStatus.AwaitingResponse else null,
+                        if (filter.status.contains(BeatmapStatus.Bubbled)) Beatmap::status eq BeatmapStatus.Bubbled else null,
+                        if (filter.status.contains(BeatmapStatus.Qualified)) Beatmap::status eq BeatmapStatus.Qualified else null,
+                        if (filter.hideRanked != true && filter.status.contains(BeatmapStatus.Ranked)) Beatmap::status eq BeatmapStatus.Ranked else null,
+                        if (filter.status.contains(BeatmapStatus.Popped)) Beatmap::status eq BeatmapStatus.Popped else null,
+                        if (filter.status.contains(BeatmapStatus.Disqualified)) Beatmap::status eq BeatmapStatus.Disqualified else null,
+                        if (filter.hideGraved != true && filter.status.contains(BeatmapStatus.Graved)) Beatmap::status eq BeatmapStatus.Graved else null
+                ))
+        )
+
+        val findQuery = collection.find(query)
+
+        if (filter.limit != null) {
+            findQuery.limit(filter.limit)
+        } else {
+            findQuery.limit(10)
+        }
+
+        if (filter.page != null && filter.limit != null && filter.page > 0) {
+            findQuery.skip((filter.page - 1) * filter.limit)
+        }
+
+        val totalCount = if (filter.countTotal != null && filter.countTotal) {
+            collection.countDocuments(query).toInt()
+        } else {
+            0
+        }
+
+        findQuery.sort(descending(Beatmap::dateUpdated))
+
+        val result = findQuery.toMutableList()
+        return FindResponse(totalCount, result.count(), result)
+    }
+}
