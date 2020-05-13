@@ -1,7 +1,5 @@
 package nl.greaper.bnplanner.service
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.natpryce.konfig.Configuration
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
@@ -11,8 +9,8 @@ import nl.greaper.bnplanner.dataSource.TokenDataSource
 import nl.greaper.bnplanner.exception.RegistrationException
 import nl.greaper.bnplanner.exception.UnauthorizedException
 import nl.greaper.bnplanner.model.auth.AuthUser
-import nl.greaper.bnplanner.model.auth.Credentials
 import nl.greaper.bnplanner.model.auth.AuthenticationResponse
+import nl.greaper.bnplanner.model.auth.Credentials
 import nl.greaper.bnplanner.model.user.User
 import nl.greaper.bnplanner.util.EncriptionUtil
 import org.springframework.stereotype.Service
