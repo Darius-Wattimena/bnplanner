@@ -48,7 +48,6 @@ class UserService(val dataSource: UserDataSource) {
                     user.osuName,
                     user.aliases,
                     user.profilePictureUri,
-                    (user.authId != null && user.authId != "null"),
                     user.hasEditPermissions,
                     user.hasAdminPermissions,
                     user.role

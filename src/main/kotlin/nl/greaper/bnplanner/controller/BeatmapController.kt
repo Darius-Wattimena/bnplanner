@@ -4,15 +4,15 @@ import mu.KotlinLogging
 import nl.greaper.bnplanner.model.FindResponse
 import nl.greaper.bnplanner.model.beatmap.*
 import nl.greaper.bnplanner.model.filter.BeatmapFilter
-import nl.greaper.bnplanner.service.AuthService
 import nl.greaper.bnplanner.service.BeatmapService
+import nl.greaper.bnplanner.service.OsuService
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/v1/beatmap")
 class BeatmapController(
         val service: BeatmapService,
-        val authService: AuthService
+        val osuService: OsuService
 ) {
     private val log = KotlinLogging.logger {}
 
@@ -39,12 +39,13 @@ class BeatmapController(
     @PutMapping("/{id}/update")
     fun updateBeatmap(
             @PathVariable("id") id: String,
+            @RequestHeader(name = "Osu-Id") osuId: Long,
             @RequestHeader(name = "Authorization") token: String,
             @RequestBody update: UpdatedBeatmap
     ): Boolean {
         return try {
-            val user = authService.getUserFromAuthToken(token)
-            if (user.hasEditPermissions) {
+            val user = osuService.getUserFromToken(token, osuId)
+            if (user != null && user.hasEditPermissions) {
                 service.updateBeatmap(user.osuId, id.toLong(), update)
                 true
             } else {
@@ -58,12 +59,13 @@ class BeatmapController(
 
     @PostMapping("/add")
     fun addBeatmap(
+            @RequestHeader(name = "Osu-Id") osuId: Long,
             @RequestHeader(name = "Authorization") token: String,
             @RequestBody newBeatmap: NewBeatmap
     ): Boolean {
         return try {
-            val user = authService.getUserFromAuthToken(token)
-            if (user.hasEditPermissions) {
+            val user = osuService.getUserFromToken(token, osuId)
+            if (user != null && user.hasEditPermissions) {
                 service.addBeatmap(
                         editorId = user.osuId,
                         beatmapId = newBeatmap.beatmapId.toLong(),

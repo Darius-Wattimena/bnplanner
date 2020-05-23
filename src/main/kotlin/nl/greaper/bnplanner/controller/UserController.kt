@@ -2,7 +2,7 @@ package nl.greaper.bnplanner.controller
 
 import nl.greaper.bnplanner.model.FindResponse
 import nl.greaper.bnplanner.model.user.*
-import nl.greaper.bnplanner.service.AuthService
+import nl.greaper.bnplanner.service.OsuService
 import nl.greaper.bnplanner.service.UserService
 import org.springframework.web.bind.annotation.*
 
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*
 @RequestMapping("/v1/user")
 class UserController(
         val service: UserService,
-        val authService: AuthService
+        val osuService: OsuService
 ) {
     @GetMapping("/withAuth/{authId}")
     fun findUserWithAuth(@PathVariable("authId") authId: String): User? {
@@ -67,12 +67,13 @@ class UserController(
 
     @PostMapping("/add")
     fun addUser(
+            @RequestHeader(name = "Osu-Id") osuId: Long,
             @RequestHeader(name = "Authorization") token: String,
             @RequestBody newUser: NewUser
     ): Boolean {
         return try {
-            val user = authService.getUserFromAuthToken(token)
-            if (user.hasAdminPermissions) {
+            val user = osuService.getUserFromToken(token, osuId)
+            if (user != null && user.hasAdminPermissions) {
                 service.addUser(user.osuId, newUser)
                 true
             } else {
@@ -86,12 +87,13 @@ class UserController(
     @PutMapping("/{id}/update")
     fun updateUser(
             @PathVariable("id") id: String,
+            @RequestHeader(name = "Osu-Id") osuId: Long,
             @RequestHeader(name = "Authorization") token: String,
             @RequestBody update: UpdatedUser
     ): Boolean {
         return try {
-            val user = authService.getUserFromAuthToken(token)
-            if (user.hasAdminPermissions) {
+            val user = osuService.getUserFromToken(token, osuId)
+            if (user != null && user.hasAdminPermissions) {
                 service.updateUser(user.osuId, id.toLong(), update)
                 true
             } else {
