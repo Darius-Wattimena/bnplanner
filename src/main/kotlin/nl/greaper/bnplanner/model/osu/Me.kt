@@ -57,6 +57,6 @@ package nl.greaper.bnplanner.model.osu
 data class Me(
         val id: Long,
         val username: String,
-        val group_badge: GroupBadge?, // FIXME when https://github.com/ppy/osu-web/pull/6013 is merged
-        val previous_usernames: List<String>
+        val groups: List<GroupBadge> = emptyList(), // FIXME when https://github.com/ppy/osu-web/pull/6013 is merged
+        val previous_usernames: List<String> = emptyList()
 )

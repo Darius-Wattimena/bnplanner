@@ -54,7 +54,7 @@ class OsuService(
             userChanges = true
         }
 
-        val userRole = getUserRole(user, osuMe.group_badge)
+        val userRole = getUserRole(user, osuMe.groups)
 
         if (user.role != userRole) {
             user.role = userRole
