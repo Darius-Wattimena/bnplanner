@@ -74,7 +74,7 @@ class UserController(
         return try {
             val user = osuService.getUserFromToken(token, osuId)
             if (user != null && user.hasAdminPermissions) {
-                service.addUser(user.osuId, newUser)
+                service.addUser(user.osuId, newUser, token)
                 true
             } else {
                 false

@@ -9,7 +9,10 @@ import nl.greaper.bnplanner.model.user.*
 import org.springframework.stereotype.Service
 
 @Service
-class UserService(val dataSource: UserDataSource) {
+class UserService(
+        val dataSource: UserDataSource,
+        val osuService: OsuService
+) {
     fun findUserWithAuth(authId: String): User? {
         return dataSource.findByAuthId(authId)
     }
@@ -108,13 +111,21 @@ class UserService(val dataSource: UserDataSource) {
         dataSource.save(user)
     }
 
-    fun addUser(editorId: Long, newUser: NewUser) {
+    fun addUser(editorId: Long, newUser: NewUser, token: String) {
         if (dataSource.exists(newUser.osuId)) {
             throw UserException("User with the provided id already registered on the planner")
         }
-        val user = User(newUser.osuId, newUser.osuName, "https://a.ppy.sh/${newUser.osuId}", mutableListOf())
-        dataSource.save(user)
-        user.events.add(Events.asUserCreatedEvent(editorId))
-        dataSource.save(user)
+        val foundUser = osuService.findUserWithId(token, newUser.osuId)
+        if (foundUser != null) {
+            val user = User(
+                    foundUser.id,
+                    foundUser.username,
+                    "https://a.ppy.sh/${newUser.osuId}",
+                    foundUser.previous_usernames.toMutableList()
+            )
+            dataSource.save(user)
+            user.events.add(Events.asUserCreatedEvent(editorId))
+            dataSource.save(user)
+        }
     }
 }

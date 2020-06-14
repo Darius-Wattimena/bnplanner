@@ -66,6 +66,16 @@ class OsuService(
         }
     }
 
+    fun findUserWithId(token: String, osuId: Long): Me? {
+        return try {
+            val response = client.get("/users/$osuId", token)
+            return response.body?.let { objectMapper.readValue<Me>(it) }
+        } catch (ex: Exception) {
+            log.error(ex) { "Error occurred while trying to get the user from the provided token" }
+            null
+        }
+    }
+
     fun getUserFromToken(token: String, osuId: Long): User? {
         return try {
             if (sessions.containsKey(osuId) && sessions[osuId] == token) {
