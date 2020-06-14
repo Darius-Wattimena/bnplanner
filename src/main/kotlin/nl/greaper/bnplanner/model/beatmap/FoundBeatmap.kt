@@ -8,7 +8,7 @@ data class FoundBeatmap (
         var title: String,
         var note: String,
         var mapper: String,
-        var status: BeatmapStatus = BeatmapStatus.AwaitingResponse,
+        var status: Long = BeatmapStatus.Pending.prio,
         val nominators: List<User> = emptyList(),
         val interested: List<User> = emptyList()
 )

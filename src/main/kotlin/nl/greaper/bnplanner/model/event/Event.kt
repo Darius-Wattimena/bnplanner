@@ -30,8 +30,8 @@ object Events {
         return Event(userId, "Added Nominator", "Added ${nominator.osuName} as nominator.")
     }
 
-    fun asBeatmapStatusEvent(userId: Long, newStatus: BeatmapStatus): Event {
-        return Event(userId, "Updated Status", "Updated status to ${newStatus.getReadableName()}.")
+    fun asBeatmapStatusEvent(userId: Long, newStatus: Long): Event {
+        return Event(userId, "Updated Status", "Updated status to ${BeatmapStatus.fromPrio(newStatus).getReadableName()}.")
     }
 
     fun asUserUpdateUsernameEvent(editorId: Long, oldName: String, newName: String): Event {

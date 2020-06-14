@@ -8,7 +8,7 @@ data class DetailedBeatmap (
         var title: String,
         var note: String,
         var mapper: String,
-        var status: BeatmapStatus,
+        var status: Long,
         var nominators: MutableList<Long>,
         val interested: MutableList<Long>,
         val events: List<DetailedEvent>

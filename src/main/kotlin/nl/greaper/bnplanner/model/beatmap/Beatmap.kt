@@ -10,7 +10,7 @@ data class Beatmap(
         var title: String,
         var note: String,
         var mapper: String,
-        var status: BeatmapStatus = BeatmapStatus.Pending,
+        var status: Long = BeatmapStatus.Pending.prio,
         var nominators: MutableList<Long> = mutableListOf(0, 0),
         val interested: MutableList<Long> = mutableListOf(),
         val events: MutableList<Event> = mutableListOf(),
@@ -19,14 +19,28 @@ data class Beatmap(
         var dateRanked: Long = 0
 )
 
-enum class BeatmapStatus {
-    Qualified,
-    Bubbled,
-    Pending,
-    AwaitingResponse, // TODO remove and make all to Pending
-    WorkInProgress, // TODO remove and make all to Pending
-    Disqualified,
-    Popped,
-    Ranked,
-    Graved;
+enum class BeatmapStatus(val prio: Long) {
+    Qualified(1),
+    Bubbled(2),
+    Pending(3),
+    Disqualified(4),
+    Popped(5),
+    Ranked(6),
+    Graved(7);
+
+    companion object {
+        fun fromPrio(prio: Long): BeatmapStatus
+        {
+            return when (prio) {
+                Qualified.prio -> Qualified
+                Bubbled.prio -> Bubbled
+                Pending.prio -> Pending
+                Disqualified.prio -> Disqualified
+                Popped.prio -> Popped
+                Ranked.prio -> Ranked
+                Graved.prio -> Graved
+                else -> Pending
+            }
+        }
+    }
 }

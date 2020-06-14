@@ -124,9 +124,9 @@ class BeatmapService(
         if (oldStatus != beatmap.status) {
             beatmap.events.add(Events.asBeatmapStatusEvent(editorId, beatmap.status))
 
-            if (beatmap.status == BeatmapStatus.Ranked) {
+            if (beatmap.status == BeatmapStatus.Ranked.prio) {
                 beatmap.dateRanked = now
-            } else if (oldStatus == BeatmapStatus.Ranked) {
+            } else if (oldStatus == BeatmapStatus.Ranked.prio) {
                 // When someone accidental sets the map to ranked before
                 // We don't want to have an incorrect ranked timestamp but instead reset it back to 0
                 beatmap.dateRanked = 0
@@ -138,7 +138,7 @@ class BeatmapService(
 
     fun setBeatmapStatus(beatmapId: Long, status: BeatmapStatus) {
         val beatmap = dataSource.find(beatmapId)
-        beatmap.status = status
+        beatmap.status = status.prio
         dataSource.save(beatmap)
     }
 }
