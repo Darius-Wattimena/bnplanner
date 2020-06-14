@@ -13,6 +13,6 @@ data class BeatmapFilter(
         val hideGraved: Boolean? = false,
         val hideRanked: Boolean? = false,
 
-        val status: List<BeatmapStatus> = emptyList(),
+        val status: List<Long> = emptyList(),
         val nominator: List<Long> = emptyList()
 )

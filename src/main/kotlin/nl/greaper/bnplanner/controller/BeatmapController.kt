@@ -85,7 +85,7 @@ class BeatmapController(
             @RequestParam artist: String?,
             @RequestParam title: String?,
             @RequestParam mapper: String?,
-            @RequestParam status: List<BeatmapStatus>?,
+            @RequestParam status: List<Long>?,
             @RequestParam limit: Int?,
             @RequestParam page: Int?,
             @RequestParam countTotal: Boolean?,

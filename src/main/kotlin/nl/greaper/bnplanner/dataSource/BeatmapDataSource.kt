@@ -41,13 +41,13 @@ class BeatmapDataSource(val database: MongoDatabase) {
                         if (filter.hideGraved != null && filter.hideGraved) {Beatmap::status ne BeatmapStatus.Graved.prio} else null
                 )),
                 or(listOfNotNull(
-                        if (filter.status.contains(BeatmapStatus.Pending)) Beatmap::status eq BeatmapStatus.Pending.prio else null,
-                        if (filter.status.contains(BeatmapStatus.Bubbled)) Beatmap::status eq BeatmapStatus.Bubbled.prio else null,
-                        if (filter.status.contains(BeatmapStatus.Qualified)) Beatmap::status eq BeatmapStatus.Qualified.prio else null,
-                        if (filter.status.contains(BeatmapStatus.Ranked)) Beatmap::status eq BeatmapStatus.Ranked.prio else null,
-                        if (filter.status.contains(BeatmapStatus.Popped)) Beatmap::status eq BeatmapStatus.Popped.prio else null,
-                        if (filter.status.contains(BeatmapStatus.Disqualified)) Beatmap::status eq BeatmapStatus.Disqualified.prio else null,
-                        if (filter.status.contains(BeatmapStatus.Graved)) Beatmap::status eq BeatmapStatus.Graved.prio else null
+                        if (filter.status.contains(BeatmapStatus.Pending.prio)) Beatmap::status eq BeatmapStatus.Pending.prio else null,
+                        if (filter.status.contains(BeatmapStatus.Bubbled.prio)) Beatmap::status eq BeatmapStatus.Bubbled.prio else null,
+                        if (filter.status.contains(BeatmapStatus.Qualified.prio)) Beatmap::status eq BeatmapStatus.Qualified.prio else null,
+                        if (filter.status.contains(BeatmapStatus.Ranked.prio)) Beatmap::status eq BeatmapStatus.Ranked.prio else null,
+                        if (filter.status.contains(BeatmapStatus.Popped.prio)) Beatmap::status eq BeatmapStatus.Popped.prio else null,
+                        if (filter.status.contains(BeatmapStatus.Disqualified.prio)) Beatmap::status eq BeatmapStatus.Disqualified.prio else null,
+                        if (filter.status.contains(BeatmapStatus.Graved.prio)) Beatmap::status eq BeatmapStatus.Graved.prio else null
                 ))
         )
 
