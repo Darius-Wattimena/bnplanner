@@ -66,14 +66,11 @@ class BeatmapController(
         return try {
             val user = osuService.getUserFromToken(token, osuId)
             if (user != null && user.hasEditPermissions) {
-                service.addBeatmap(
+                return service.addBeatmap(
                         editorId = user.osuId,
                         beatmapId = newBeatmap.beatmapId.toLong(),
-                        artist = newBeatmap.artist,
-                        mapper = newBeatmap.mapper,
-                        title = newBeatmap.title
+                        token = token
                 )
-                true
             } else {
                 false
             }

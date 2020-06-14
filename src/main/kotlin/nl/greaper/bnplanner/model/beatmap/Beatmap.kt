@@ -10,7 +10,7 @@ data class Beatmap(
         var title: String,
         var note: String,
         var mapper: String,
-        var status: BeatmapStatus = BeatmapStatus.AwaitingResponse,
+        var status: BeatmapStatus = BeatmapStatus.Pending,
         var nominators: MutableList<Long> = mutableListOf(0, 0),
         val interested: MutableList<Long> = mutableListOf(),
         val events: MutableList<Event> = mutableListOf(),
@@ -23,10 +23,10 @@ enum class BeatmapStatus {
     Qualified,
     Bubbled,
     Pending,
-    AwaitingResponse,
-    WorkInProgress,
-    Popped,
+    AwaitingResponse, // TODO remove and make all to Pending
+    WorkInProgress, // TODO remove and make all to Pending
     Disqualified,
+    Popped,
     Ranked,
     Graved;
 }

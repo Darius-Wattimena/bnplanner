@@ -71,7 +71,7 @@ class BeatmapDataSource(val database: MongoDatabase) {
             0
         }
 
-        findQuery.sort(descending(Beatmap::dateUpdated))
+        findQuery.sort(and(ascending(Beatmap::status), descending(Beatmap::dateUpdated)))
 
         val result = findQuery.toMutableList()
         return FindResponse(totalCount, result.count(), result)

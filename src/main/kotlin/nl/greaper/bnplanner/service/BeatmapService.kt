@@ -14,17 +14,24 @@ import java.time.Instant
 @Service
 class BeatmapService(
         val dataSource: BeatmapDataSource,
-        val userDataSource: UserDataSource
+        val userDataSource: UserDataSource,
+        val osuService: OsuService
 ) {
-    fun addBeatmap(editorId: Long, beatmapId: Long, artist: String, title: String, mapper: String) {
+    fun addBeatmap(editorId: Long, beatmapId: Long, token: String): Boolean {
         if (dataSource.exists(beatmapId)) {
             throw BeatmapException("Beatmapset already registered on the planner")
         }
         val now = Instant.now().epochSecond
-        val newBeatmap = Beatmap(beatmapId, artist, title, "", mapper, dateAdded = now, dateUpdated = now)
-        dataSource.save(newBeatmap)
-        newBeatmap.events.add(Events.asBeatmapCreatedEvent(editorId))
-        dataSource.save(newBeatmap)
+        val beatmapSet = osuService.findBeatmapSetInfo(token, beatmapId)
+        return if (beatmapSet != null) {
+            val newBeatmap = Beatmap(beatmapId, beatmapSet.artist, beatmapSet.title, "", beatmapSet.creator, dateAdded = now, dateUpdated = now)
+            dataSource.save(newBeatmap)
+            newBeatmap.events.add(Events.asBeatmapCreatedEvent(editorId))
+            dataSource.save(newBeatmap)
+            true
+        } else {
+            false
+        }
     }
 
     fun findBeatmap(beatmapId: Long): Beatmap {

@@ -6,6 +6,7 @@ import mu.KotlinLogging
 import nl.greaper.bnplanner.OsuHttpClient
 import nl.greaper.bnplanner.dataSource.UserDataSource
 import nl.greaper.bnplanner.model.auth.UserProfile
+import nl.greaper.bnplanner.model.osu.BeatmapSet
 import nl.greaper.bnplanner.model.osu.Me
 import nl.greaper.bnplanner.model.user.User
 import nl.greaper.bnplanner.util.getUserRole
@@ -71,7 +72,17 @@ class OsuService(
             val response = client.get("/users/$osuId", token)
             return response.body?.let { objectMapper.readValue<Me>(it) }
         } catch (ex: Exception) {
-            log.error(ex) { "Error occurred while trying to get the user from the provided token" }
+            log.error(ex) { "Error occurred while trying to get user $osuId from the osu api" }
+            null
+        }
+    }
+
+    fun findBeatmapSetInfo(token: String, beatmapSetId: Long): BeatmapSet? {
+        return try {
+            val response = client.get("/beatmapsets/$beatmapSetId", token)
+            return response.body?.let { objectMapper.readValue<BeatmapSet>(it) }
+        } catch (ex: Exception) {
+            log.error(ex) { "Error occurred while trying to get the beatmap set from the osu api" }
             null
         }
     }
@@ -91,7 +102,7 @@ class OsuService(
                 }
             }
         } catch (ex: Exception) {
-            log.error(ex) { "Error occurred while trying to get the user from the provided token" }
+            log.error(ex) { "Error occurred while trying to get user $osuId from the osu api" }
             null
         }
     }
