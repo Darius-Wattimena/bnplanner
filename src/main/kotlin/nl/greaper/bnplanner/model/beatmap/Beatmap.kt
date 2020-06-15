@@ -24,9 +24,9 @@ data class Beatmap(
 enum class BeatmapStatus(val prio: Long) {
     Qualified(1),
     Bubbled(2),
-    Pending(3),
-    Disqualified(4),
-    Popped(5),
+    Disqualified(3),
+    Popped(4),
+    Pending(5),
     Ranked(6),
     Graved(7);
 
