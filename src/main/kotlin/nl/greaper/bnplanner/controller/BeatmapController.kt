@@ -36,6 +36,26 @@ class BeatmapController(
         }
     }
 
+    @DeleteMapping("/{id}/delete")
+    fun deleteBeatmap(
+            @PathVariable("id") id: String,
+            @RequestHeader(name = "Osu-Id") osuId: Long,
+            @RequestHeader(name = "Authorization") token: String
+    ): Boolean {
+        return try {
+            val user = osuService.getUserFromToken(token, osuId)
+            if (user != null && user.hasEditPermissions) {
+                service.deleteBeatmap(id.toLong())
+                true
+            } else {
+                false
+            }
+        } catch (ex: Exception) {
+            log.error("Error while executing Request", ex)
+            false
+        }
+    }
+
     @PutMapping("/{id}/update")
     fun updateBeatmap(
             @PathVariable("id") id: String,

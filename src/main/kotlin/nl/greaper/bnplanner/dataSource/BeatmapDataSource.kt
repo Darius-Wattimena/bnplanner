@@ -23,6 +23,10 @@ class BeatmapDataSource(val database: MongoDatabase) {
         ) > 0
     }
 
+    fun deleteById(beatmapId: Long): Boolean {
+        return getCollection().deleteOne(Beatmap::osuId eq beatmapId).deletedCount > 0
+    }
+
     fun find(beatmapSetId: Long): Beatmap {
         return getCollection().findOne(
                 Beatmap::osuId eq beatmapSetId

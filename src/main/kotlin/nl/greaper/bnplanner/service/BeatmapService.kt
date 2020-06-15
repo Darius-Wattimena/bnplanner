@@ -38,6 +38,10 @@ class BeatmapService(
         return dataSource.find(beatmapId)
     }
 
+    fun deleteBeatmap(beatmapId: Long): Boolean {
+        return dataSource.deleteById(beatmapId)
+    }
+
     fun findDetailedBeatmap(beatmapId: Long): DetailedBeatmap {
         val beatmap = dataSource.find(beatmapId)
 
