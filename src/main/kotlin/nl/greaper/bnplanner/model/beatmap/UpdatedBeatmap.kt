@@ -6,5 +6,7 @@ data class UpdatedBeatmap(
         val title: String?,
         val mapper: String?,
         val note: String?,
-        val nominators: MutableList<Long>?
+        val nominators: MutableList<Long>?,
+        val nominatedByBNOne: Boolean = false,
+        val nominatedByBNTwo: Boolean = false
 )

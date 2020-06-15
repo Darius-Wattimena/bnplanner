@@ -16,7 +16,9 @@ data class Beatmap(
         val events: MutableList<Event> = mutableListOf(),
         var dateAdded: Long = 0,
         var dateUpdated: Long = 0,
-        var dateRanked: Long = 0
+        var dateRanked: Long = 0,
+        var nominatedByBNOne: Boolean = false,
+        var nominatedByBNTwo: Boolean = false
 )
 
 enum class BeatmapStatus(val prio: Long) {

@@ -10,5 +10,7 @@ data class FoundBeatmap (
         var mapper: String,
         var status: Long = BeatmapStatus.Pending.prio,
         val nominators: List<User> = emptyList(),
-        val interested: List<User> = emptyList()
+        val interested: List<User> = emptyList(),
+        val nominatedByBNOne: Boolean = false,
+        val nominatedByBNTwo: Boolean = false
 )

@@ -11,5 +11,7 @@ data class DetailedBeatmap (
         var status: Long,
         var nominators: MutableList<Long>,
         val interested: MutableList<Long>,
-        val events: List<DetailedEvent>
+        val events: List<DetailedEvent>,
+        val nominatedByBNOne: Boolean = false,
+        val nominatedByBNTwo: Boolean = false
 )

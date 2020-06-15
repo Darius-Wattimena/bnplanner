@@ -50,13 +50,15 @@ class BeatmapService(
                 beatmap.status,
                 beatmap.nominators,
                 beatmap.interested,
-                beatmap.events.map { event -> DetailedEvent(userDataSource.find(event.userId), event.title, event.description, event.timestamp) }
+                beatmap.events.map { event -> DetailedEvent(userDataSource.find(event.userId), event.title, event.description, event.timestamp) },
+                beatmap.nominatedByBNOne,
+                beatmap.nominatedByBNTwo
         )
     }
 
     fun findBeatmaps(filter: BeatmapFilter): FindResponse<FoundBeatmap> {
         val foundBeatmaps = dataSource.findAll(filter)
-        val result = foundBeatmaps.response.map {beatmap ->
+        val result = foundBeatmaps.response.map { beatmap ->
             FoundBeatmap(
                     beatmap.osuId,
                     beatmap.artist,
@@ -65,7 +67,9 @@ class BeatmapService(
                     beatmap.mapper,
                     beatmap.status,
                     beatmap.nominators.mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null },
-                    beatmap.interested.mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null }
+                    beatmap.interested.mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null },
+                    beatmap.nominatedByBNOne,
+                    beatmap.nominatedByBNTwo
             )
         }
 
@@ -92,13 +96,15 @@ class BeatmapService(
         beatmap.mapper = updated.mapper ?: beatmap.mapper
         beatmap.note = updated.note ?: beatmap.note
         beatmap.nominators = updated.nominators ?: beatmap.nominators
+        beatmap.nominatedByBNOne = updated.nominatedByBNOne
+        beatmap.nominatedByBNTwo = updated.nominatedByBNTwo
 
         if (oldArtist != beatmap.artist || oldTitle != beatmap.title ||
                 oldMapper != beatmap.mapper || oldNote != beatmap.note) {
             beatmap.events.add(Events.asBeatmapMetadataModifiedEvent(editorId))
         }
 
-        if (oldNominators != beatmap.nominators) {
+        if (!oldNominators.containsAll(beatmap.nominators)) {
             val newNominators = beatmap.nominators.mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null }
             for (oldNominator in oldNominators) {
                 if (oldNominator > 0) {
@@ -130,6 +136,32 @@ class BeatmapService(
                 // When someone accidental sets the map to ranked before
                 // We don't want to have an incorrect ranked timestamp but instead reset it back to 0
                 beatmap.dateRanked = 0
+            }
+        }
+
+        // Depending on the beatmap status we set the nominated flags to true or false
+        when (beatmap.status) {
+            BeatmapStatus.Ranked.prio, BeatmapStatus.Qualified.prio -> {
+                beatmap.nominatedByBNOne = true
+                beatmap.nominatedByBNTwo = true
+            }
+            BeatmapStatus.Disqualified.prio, BeatmapStatus.Popped.prio -> {
+                beatmap.nominatedByBNOne = false
+                beatmap.nominatedByBNTwo = false
+            }
+        }
+
+        // When a nominator is remove we set their respective flag to false
+        if (!updated.nominators.isNullOrEmpty()) {
+            val nominatorOne = updated.nominators[0]
+            val nominatorTwo = updated.nominators[1]
+
+            if (nominatorOne == 0L) {
+                beatmap.nominatedByBNOne = false
+            }
+
+            if (nominatorTwo == 0L) {
+                beatmap.nominatedByBNTwo = false
             }
         }
 
