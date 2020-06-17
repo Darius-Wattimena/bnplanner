@@ -9,7 +9,6 @@ import nl.greaper.bnplanner.model.auth.UserProfile
 import nl.greaper.bnplanner.model.osu.BeatmapSet
 import nl.greaper.bnplanner.model.osu.Me
 import nl.greaper.bnplanner.model.user.User
-import nl.greaper.bnplanner.util.getUserRole
 import org.springframework.stereotype.Service
 
 @Service
@@ -44,7 +43,6 @@ class OsuService(
     /**
      * Update the user his info if any changes occurred in the following subjects:
      * - Username
-     * - Group
      */
     private fun updateUserInfoIfNeeded(user: User, osuMe: Me) {
         var userChanges = false
@@ -52,13 +50,6 @@ class OsuService(
         if (user.osuName != osuMe.username) {
             user.osuName = osuMe.username
             user.aliases = osuMe.previous_usernames.toMutableList()
-            userChanges = true
-        }
-
-        val userRole = getUserRole(user, osuMe.groups)
-
-        if (user.role != userRole) {
-            user.role = userRole
             userChanges = true
         }
 
