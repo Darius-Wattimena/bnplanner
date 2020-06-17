@@ -15,7 +15,6 @@ class OsuUtilTests {
         val catchNATAlumni = createMockUser(OsuRole.NAT)
         val catchBNAlumni = createMockUser(OsuRole.BN)
         val catchPBNAlumni = createMockUser(OsuRole.PBN)
-        val probationHybridBN = createMockUser(OsuRole.OBS, 4236057) // 4236057 = Sinnoh
 
         assertEquals(OsuRole.OBS, getUserRole(observer, emptyList()))
         assertEquals(OsuRole.OBS, getUserRole(observer, listOf(GroupBadge(4))))
@@ -33,8 +32,6 @@ class OsuUtilTests {
         assertEquals(OsuRole.CA, getUserRole(catchNATAlumni, emptyList()))
         assertEquals(OsuRole.CA, getUserRole(catchBNAlumni, emptyList()))
         assertEquals(OsuRole.CA, getUserRole(catchPBNAlumni, emptyList()))
-
-        assertEquals(OsuRole.PBN, getUserRole(probationHybridBN, listOf(GroupBadge(28))))
     }
 
     private fun createMockUser(role: OsuRole, osuId: Long = 0) = User(osuId, "", "", role = role)
