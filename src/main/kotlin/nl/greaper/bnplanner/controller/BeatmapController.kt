@@ -111,6 +111,7 @@ class BeatmapController(
             @RequestParam countTotal: Boolean?,
             @RequestParam hideGraved: Boolean?,
             @RequestParam hideRanked: Boolean?,
+            @RequestParam hideWithTwoNominators: Boolean?,
             @RequestParam nominator: List<Long>? = emptyList()
     ): FindResponse<FoundBeatmap> {
         return try {
@@ -123,6 +124,7 @@ class BeatmapController(
                     countTotal,
                     hideGraved,
                     hideRanked,
+                    hideWithTwoNominators,
                     status ?: emptyList(),
                     nominator ?: emptyList()
             ))

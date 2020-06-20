@@ -1,7 +1,5 @@
 package nl.greaper.bnplanner.model.filter
 
-import nl.greaper.bnplanner.model.beatmap.BeatmapStatus
-
 data class BeatmapFilter(
         val artist: String?,
         val title: String?,
@@ -12,6 +10,7 @@ data class BeatmapFilter(
         val countTotal: Boolean? = false,
         val hideGraved: Boolean? = false,
         val hideRanked: Boolean? = false,
+        val hideWithTwoNominators: Boolean? = false,
 
         val status: List<Long> = emptyList(),
         val nominator: List<Long> = emptyList()
