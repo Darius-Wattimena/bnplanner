@@ -43,7 +43,7 @@ class BeatmapDataSource(val database: MongoDatabase) {
                         if (filter.mapper != null) { Beatmap::mapper regex quote(filter.mapper).toRegex(RegexOption.IGNORE_CASE) } else null,
                         if (filter.hideRanked != null && filter.hideRanked) { Beatmap::status ne BeatmapStatus.Ranked.prio } else null,
                         if (filter.hideGraved != null && filter.hideGraved) { Beatmap::status ne BeatmapStatus.Graved.prio } else null,
-                        if (filter.hideWithTwoNominators != null && filter.hideWithTwoNominators) { Beatmap::nominators `in` listOf(0) } else null
+                        if (filter.hideWithTwoNominators != null && filter.hideWithTwoNominators) { Beatmap::nominators `in` listOf<Long>(0) } else null
                 )),
                 or(listOfNotNull(
                         if (filter.status.contains(BeatmapStatus.Pending.prio)) Beatmap::status eq BeatmapStatus.Pending.prio else null,
