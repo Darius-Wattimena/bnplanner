@@ -136,22 +136,10 @@ class BeatmapService(
 
             if (beatmap.status == BeatmapStatus.Ranked.prio) {
                 beatmap.dateRanked = now
-            } else if (oldStatus == BeatmapStatus.Ranked.prio) {
+            } else if (oldStatus != BeatmapStatus.Ranked.prio) {
                 // When someone accidental sets the map to ranked before
                 // We don't want to have an incorrect ranked timestamp but instead reset it back to 0
                 beatmap.dateRanked = 0
-            }
-        }
-
-        // Depending on the beatmap status we set the nominated flags to true or false
-        when (beatmap.status) {
-            BeatmapStatus.Ranked.prio, BeatmapStatus.Qualified.prio -> {
-                beatmap.nominatedByBNOne = true
-                beatmap.nominatedByBNTwo = true
-            }
-            BeatmapStatus.Disqualified.prio, BeatmapStatus.Popped.prio -> {
-                beatmap.nominatedByBNOne = false
-                beatmap.nominatedByBNTwo = false
             }
         }
 
@@ -169,12 +157,57 @@ class BeatmapService(
             }
         }
 
+        /**
+         * Updated the beatmap status for users that are lazy
+         * - To Pending when no nominator nominated the set and is not popped or disqualified
+         * - To Bubbled when only 1 nominator nominated the set
+         * - To Qualified when 2 nominators nominated the set
+         */
+        when(beatmap.nominatedByBNOne to beatmap.nominatedByBNTwo) {
+            true to true -> {
+                if (beatmap.status != BeatmapStatus.Ranked.prio) {
+                    beatmap.status = BeatmapStatus.Qualified.prio
+                }
+            }
+            true to false, false to true -> {
+                beatmap.status = BeatmapStatus.Bubbled.prio
+            }
+            false to false -> {
+                if (beatmap.status != BeatmapStatus.Popped.prio && beatmap.status != BeatmapStatus.Disqualified.prio) {
+                    beatmap.status = BeatmapStatus.Pending.prio
+                }
+            }
+        }
+
         dataSource.save(beatmap)
     }
 
-    fun setBeatmapStatus(beatmapId: Long, status: BeatmapStatus) {
+    fun setBeatmapStatus(editorId: Long, beatmapId: Long, newStatus: Long) {
         val beatmap = dataSource.find(beatmapId)
-        beatmap.status = status.prio
+
+        // Status didn't change so we can ignore
+        if (beatmap.status == newStatus) {
+            return
+        }
+
+        beatmap.events.add(Events.asBeatmapStatusEvent(editorId, newStatus))
+
+        val now = Instant.now().epochSecond
+        beatmap.dateUpdated = now
+        beatmap.dateRanked = 0
+
+        when(newStatus) {
+            BeatmapStatus.Popped.prio, BeatmapStatus.Disqualified.prio -> {
+                beatmap.nominatedByBNOne = false
+                beatmap.nominatedByBNTwo = false
+            }
+            BeatmapStatus.Ranked.prio -> {
+                beatmap.dateRanked = now
+                beatmap.nominatedByBNOne = true
+                beatmap.nominatedByBNTwo = true
+            }
+        }
+        beatmap.status = newStatus
         dataSource.save(beatmap)
     }
 }
