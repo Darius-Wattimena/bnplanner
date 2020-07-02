@@ -28,7 +28,7 @@ class UserService(
                 user.hasEditPermissions,
                 user.hasAdminPermissions,
                 user.role,
-                user.events.map { event -> DetailedEvent(dataSource.find(event.userId), event.title, event.description, event.timestamp) }
+                user.events
         )
     }
 

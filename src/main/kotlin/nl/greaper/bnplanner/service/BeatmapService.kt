@@ -54,7 +54,7 @@ class BeatmapService(
                 beatmap.status,
                 beatmap.nominators,
                 beatmap.interested,
-                beatmap.events.map { event -> DetailedEvent(userDataSource.find(event.userId), event.title, event.description, event.timestamp) },
+                beatmap.events,
                 beatmap.nominatedByBNOne,
                 beatmap.nominatedByBNTwo
         )

@@ -1,6 +1,6 @@
 package nl.greaper.bnplanner.model.user
 
-import nl.greaper.bnplanner.model.event.DetailedEvent
+import nl.greaper.bnplanner.model.event.Event
 
 data class DetailedUser(
         val osuId: Long,
@@ -10,5 +10,5 @@ data class DetailedUser(
         val hasEditPermissions: Boolean,
         val hasAdminPermissions: Boolean,
         var role: OsuRole,
-        val events: List<DetailedEvent>
+        val events: List<Event>
 )
