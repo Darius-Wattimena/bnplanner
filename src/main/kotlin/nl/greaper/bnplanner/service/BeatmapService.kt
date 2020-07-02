@@ -131,18 +131,6 @@ class BeatmapService(
         val now = Instant.now().epochSecond
         beatmap.dateUpdated = now
 
-        if (oldStatus != beatmap.status) {
-            beatmap.events.add(Events.asBeatmapStatusEvent(editorId, beatmap.status))
-
-            if (beatmap.status == BeatmapStatus.Ranked.prio) {
-                beatmap.dateRanked = now
-            } else if (oldStatus != BeatmapStatus.Ranked.prio) {
-                // When someone accidental sets the map to ranked before
-                // We don't want to have an incorrect ranked timestamp but instead reset it back to 0
-                beatmap.dateRanked = 0
-            }
-        }
-
         // When a nominator is remove we set their respective flag to false
         if (!updated.nominators.isNullOrEmpty()) {
             val nominatorOne = updated.nominators[0]
@@ -176,6 +164,19 @@ class BeatmapService(
                 if (beatmap.status != BeatmapStatus.Popped.prio && beatmap.status != BeatmapStatus.Disqualified.prio) {
                     beatmap.status = BeatmapStatus.Pending.prio
                 }
+            }
+        }
+
+        // Now check if the status got updated so we can update the rank date and add an event
+        if (oldStatus != beatmap.status) {
+            beatmap.events.add(Events.asBeatmapStatusEvent(editorId, beatmap.status))
+
+            if (beatmap.status == BeatmapStatus.Ranked.prio) {
+                beatmap.dateRanked = now
+            } else if (oldStatus != BeatmapStatus.Ranked.prio) {
+                // When someone accidental sets the map to ranked before
+                // We don't want to have an incorrect ranked timestamp but instead reset it back to 0
+                beatmap.dateRanked = 0
             }
         }
 
