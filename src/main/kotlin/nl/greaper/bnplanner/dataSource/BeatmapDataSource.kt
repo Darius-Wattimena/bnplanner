@@ -21,7 +21,7 @@ class BeatmapDataSource(database: MongoDatabase) {
                 Beatmap::title,
                 Beatmap::mapper,
                 Beatmap::nominators,
-                Beatmap::status,
+                Beatmap::status
         ), IndexOptions().name("query"))
     }
 
