@@ -1,7 +1,7 @@
 package nl.greaper.bnplanner.dataSource
 
-import com.mongodb.client.MongoCollection
 import com.mongodb.client.MongoDatabase
+import com.mongodb.client.model.IndexOptions
 import nl.greaper.bnplanner.exception.BeatmapException
 import nl.greaper.bnplanner.model.FindResponse
 import nl.greaper.bnplanner.model.beatmap.Beatmap
@@ -12,30 +12,38 @@ import org.litote.kmongo.*
 import org.springframework.stereotype.Component
 
 @Component
-class BeatmapDataSource(val database: MongoDatabase) {
-    fun getCollection(): MongoCollection<Beatmap> = database.getCollection()
+class BeatmapDataSource(database: MongoDatabase) {
+    private val collection = database.getCollection("beatmap", Beatmap::class.java)
 
-    fun save(beatmap: Beatmap) = getCollection().save(beatmap)
+    init {
+        collection.ensureIndex(ascending(
+                Beatmap::artist,
+                Beatmap::title,
+                Beatmap::mapper,
+                Beatmap::nominators,
+                Beatmap::status,
+        ), IndexOptions().name("query"))
+    }
+
+    fun save(beatmap: Beatmap) = collection.save(beatmap)
 
     fun exists(beatmapId: Long): Boolean {
-        return getCollection().countDocuments(
+        return collection.countDocuments(
                 Beatmap::osuId eq beatmapId
         ) > 0
     }
 
     fun deleteById(beatmapId: Long): Boolean {
-        return getCollection().deleteOne(Beatmap::osuId eq beatmapId).deletedCount > 0
+        return collection.deleteOne(Beatmap::osuId eq beatmapId).deletedCount > 0
     }
 
     fun find(beatmapSetId: Long): Beatmap {
-        return getCollection().findOne(
+        return collection.findOne(
                 Beatmap::osuId eq beatmapSetId
         ) ?: throw BeatmapException("Beatmap not registered on the planner")
     }
 
     fun findAll(filter: BeatmapFilter): FindResponse<Beatmap> {
-        val collection = getCollection()
-
         val query = and(
                 and(listOfNotNull(
                         if (filter.artist != null) { Beatmap::artist regex quote(filter.artist).toRegex(RegexOption.IGNORE_CASE) } else null,

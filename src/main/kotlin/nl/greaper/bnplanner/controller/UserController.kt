@@ -51,7 +51,6 @@ class UserController(
 
     @GetMapping("/searchByFilter")
     fun findUsers(
-            @RequestParam osuId: String?,
             @RequestParam name: String?,
             @RequestParam roles: List<OsuRole>?,
             @RequestParam limit: Int?,
@@ -59,7 +58,7 @@ class UserController(
             @RequestParam countTotal: Boolean?
     ): FindResponse<FoundUser> {
         return try {
-            return service.findUsers(osuId, name, roles, limit, page, countTotal)
+            return service.findUsers(name, roles, limit, page, countTotal)
         } catch (ex: Exception) {
             FindResponse()
         }

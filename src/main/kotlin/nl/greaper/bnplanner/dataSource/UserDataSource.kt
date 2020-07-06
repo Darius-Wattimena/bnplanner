@@ -1,8 +1,8 @@
 package nl.greaper.bnplanner.dataSource
 
-import com.mongodb.client.MongoCollection
 import com.mongodb.client.MongoDatabase
 import com.mongodb.client.model.Collation
+import com.mongodb.client.model.IndexOptions
 import nl.greaper.bnplanner.exception.UserException
 import nl.greaper.bnplanner.model.FindResponse
 import nl.greaper.bnplanner.model.beatmap.Beatmap
@@ -13,32 +13,46 @@ import org.litote.kmongo.*
 import org.springframework.stereotype.Component
 
 @Component
-class UserDataSource(val database: MongoDatabase) {
-    fun getCollection(): MongoCollection<User> = database.getCollection()
+class UserDataSource(database: MongoDatabase) {
+    private val collection = database.getCollection("user", User::class.java)
 
-    fun find(osuId: Long): User = getCollection().findOne(User::osuId eq osuId)
+    init {
+        collection.ensureIndex(ascending(
+                User::osuName,
+                User::role
+        ), IndexOptions().name("query"))
+
+        collection.ensureIndex(ascending(
+                User::lastToken
+        ))
+    }
+
+    fun findUserWithToken(token: String): User? {
+        return collection.findOne(
+                User::lastToken eq token
+        )
+    }
+
+    fun find(osuId: Long): User = collection.findOne(User::osuId eq osuId)
             ?: throw UserException("Could not find user with provided ID")
 
-    fun findByAuthId(authId: String): User? = getCollection().findOne(User::authId eq authId)
+    fun findByAuthId(authId: String): User? = collection.findOne(User::authId eq authId)
 
-    fun save(user: User) = getCollection().save(user)
+    fun save(user: User) = collection.save(user)
 
     fun exists(beatmapId: Long): Boolean {
-        return getCollection().countDocuments(
+        return collection.countDocuments(
                 Beatmap::osuId eq beatmapId
         ) > 0
     }
 
     fun findAll(): MutableList<User> {
-        return getCollection().find().toMutableList()
+        return collection.find().toMutableList()
     }
 
-    fun findAll(osuId: String?, name: String?, roles: List<OsuRole>, limit: Int?, page: Int?, countTotal: Boolean?): FindResponse<User> {
-        val collection = getCollection()
-
+    fun findAll(name: String?, roles: List<OsuRole>, limit: Int?, page: Int?, countTotal: Boolean?): FindResponse<User> {
         val query = and(
                 and(listOfNotNull(
-                        if (osuId != null) { User::osuId eq osuId.toLong() } else null,
                         if (name != null) { User::osuName regex quote(name).toRegex(RegexOption.IGNORE_CASE) } else null
                 )),
                 or(listOfNotNull(

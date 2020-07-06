@@ -13,7 +13,9 @@ data class User(
         var hasAdminPermissions: Boolean = false,
         var authId: String? = null,
         var role: OsuRole = OsuRole.OBS,
-        val events: MutableList<Event> = mutableListOf()
+        val events: MutableList<Event> = mutableListOf(),
+        var lastToken: String = "",
+        var lastTokenExpire: Long = 0
 )
 
 enum class OsuRole {

@@ -1,6 +1,9 @@
 package nl.greaper.bnplanner
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.natpryce.konfig.Configuration
+import nl.greaper.bnplanner.model.osu.Me
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
@@ -17,10 +20,6 @@ class OsuHttpClient(val config: Configuration) {
         return request(uri, HttpMethod.GET, authToken)
     }
 
-    fun post(uri: String, json: String, authToken: String) : ResponseEntity<String> {
-        return request(uri, HttpMethod.POST, authToken, json)
-    }
-
     private fun request(uri: String, method: HttpMethod, authToken: String, body: String = "") : ResponseEntity<String> {
         headers.remove("Authorization")
         headers.set("Authorization", authToken)
@@ -30,6 +29,6 @@ class OsuHttpClient(val config: Configuration) {
         } else {
             HttpEntity(body, headers)
         }
-        return rest.exchange("https://osu.ppy.sh/api/v2" + uri, method, request, String::class.java)
+        return rest.exchange("https://osu.ppy.sh/api/v2$uri", method, request, String::class.java)
     }
 }

@@ -10,6 +10,7 @@ import nl.greaper.bnplanner.model.osu.BeatmapSet
 import nl.greaper.bnplanner.model.osu.Me
 import nl.greaper.bnplanner.model.user.User
 import org.springframework.stereotype.Service
+import java.time.Instant
 
 @Service
 class OsuService(
@@ -18,7 +19,6 @@ class OsuService(
         val userDataSource: UserDataSource
 ) {
     private val log = KotlinLogging.logger {  }
-    private val sessions = mutableMapOf<Long, String>()
 
     fun getUserInfo(token: String): UserProfile? {
         val response = client.get("/me", token)
@@ -26,11 +26,11 @@ class OsuService(
 
         if (osuMe != null) {
             return try {
-                val user = userDataSource.find(osuMe.id)
-
-                updateUserInfoIfNeeded(user, osuMe)
-
-                sessions[osuMe.id] = token
+                val user = updateUserInfoIfNeeded(
+                        userDataSource.find(osuMe.id),
+                        osuMe,
+                        token
+                )
 
                 UserProfile(osuMe.id, user.hasEditPermissions, user.hasAdminPermissions)
             } catch (ex: Exception) {
@@ -44,18 +44,18 @@ class OsuService(
      * Update the user his info if any changes occurred in the following subjects:
      * - Username
      */
-    private fun updateUserInfoIfNeeded(user: User, osuMe: Me) {
-        var userChanges = false
-
+    private fun updateUserInfoIfNeeded(user: User, osuMe: Me, token: String): User {
         if (user.osuName != osuMe.username) {
             user.osuName = osuMe.username
             user.aliases = osuMe.previous_usernames.toMutableList()
-            userChanges = true
         }
 
-        if (userChanges) {
-            userDataSource.save(user)
-        }
+        user.lastToken = token
+        user.lastTokenExpire = Instant.now().epochSecond + 86400 // is 24 hours default expire date right now
+
+        userDataSource.save(user)
+
+        return user
     }
 
     fun findUserWithId(token: String, osuId: Long): Me? {
@@ -79,22 +79,27 @@ class OsuService(
     }
 
     fun getUserFromToken(token: String, osuId: Long): User? {
-        return try {
-            if (sessions.containsKey(osuId) && sessions[osuId] == token) {
-                userDataSource.find(osuId)
-            } else {
-                val response = client.get("/me", token)
-                val osuMe = response.body?.let { objectMapper.readValue<Me>(it) }
+        try {
+            val foundUser = userDataSource.findUserWithToken(token)
 
-                if (osuMe != null) {
-                    userDataSource.find(osuMe.id)
+            if (foundUser != null) {
+                val expireDate = Instant.ofEpochSecond(foundUser.lastTokenExpire)
+
+                if (expireDate.isAfter(Instant.now())) {
+                    return foundUser
                 } else {
-                    null
+                    val response = client.get("/me", token)
+                    val osuMe = response.body?.let { objectMapper.readValue<Me>(it) }
+
+                    if (osuMe != null) {
+                        return updateUserInfoIfNeeded(foundUser, osuMe, token)
+                    }
                 }
             }
         } catch (ex: Exception) {
             log.error(ex) { "Error occurred while trying to get user $osuId from the osu api" }
-            null
         }
+
+        return null
     }
 }
