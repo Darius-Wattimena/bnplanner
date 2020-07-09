@@ -50,10 +50,12 @@ class UserDataSource(database: MongoDatabase) {
         return collection.find().toMutableList()
     }
 
-    fun findAll(name: String?, roles: List<OsuRole>, limit: Int?, page: Int?, countTotal: Boolean?): FindResponse<User> {
+    fun findAll(name: String?, roles: List<OsuRole>, limit: Int?, page: Int?, countTotal: Boolean?, canEdit: Boolean?, isAdmin: Boolean?): FindResponse<User> {
         val query = and(
                 and(listOfNotNull(
-                        if (name != null) { User::osuName regex quote(name).toRegex(RegexOption.IGNORE_CASE) } else null
+                        if (name != null) User::osuName regex quote(name).toRegex(RegexOption.IGNORE_CASE) else null,
+                        if (canEdit != null) User::hasEditPermissions eq canEdit else null,
+                        if (isAdmin != null) User::hasAdminPermissions eq isAdmin else null
                 )),
                 or(listOfNotNull(
                         if (roles.contains(OsuRole.OBS)) User::role eq OsuRole.OBS else null,

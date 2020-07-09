@@ -40,10 +40,10 @@ class UserService(
         return dataSource.findAll().sortedWith(compareBy({it.role}, {it.osuName}))
     }
 
-    fun findUsers(name: String?, roles: List<OsuRole>?, limit: Int?, page: Int?, countTotal: Boolean?): FindResponse<FoundUser> {
+    fun findUsers(name: String?, roles: List<OsuRole>?, limit: Int?, page: Int?, countTotal: Boolean?, canEdit: Boolean?, isAdmin: Boolean?): FindResponse<FoundUser> {
         val roleList = roles ?: emptyList()
 
-        val foundUsers = dataSource.findAll(name, roleList, limit, page, countTotal)
+        val foundUsers = dataSource.findAll(name, roleList, limit, page, countTotal, canEdit, isAdmin)
 
         val result = foundUsers.response.map {user ->
             FoundUser(

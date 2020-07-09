@@ -55,10 +55,12 @@ class UserController(
             @RequestParam roles: List<OsuRole>?,
             @RequestParam limit: Int?,
             @RequestParam page: Int?,
-            @RequestParam countTotal: Boolean?
+            @RequestParam countTotal: Boolean?,
+            @RequestParam canEdit: Boolean?,
+            @RequestParam isAdmin: Boolean?
     ): FindResponse<FoundUser> {
         return try {
-            return service.findUsers(name, roles, limit, page, countTotal)
+            return service.findUsers(name, roles, limit, page, countTotal, canEdit, isAdmin)
         } catch (ex: Exception) {
             FindResponse()
         }
