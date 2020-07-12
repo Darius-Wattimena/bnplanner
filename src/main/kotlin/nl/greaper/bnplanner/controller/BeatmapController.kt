@@ -62,12 +62,12 @@ class BeatmapController(
             @PathVariable("id") id: String,
             @RequestHeader(name = "Osu-Id") osuId: Long,
             @RequestHeader(name = "Authorization") token: String,
-            @RequestParam status: String
+            @RequestBody status: UpdatedBeatmapStatus
     ): Boolean {
         return try {
             val user = osuService.getUserFromToken(token, osuId)
             if (user != null && user.hasEditPermissions) {
-                service.setBeatmapStatus(osuId, id.toLong(), status.toLong())
+                service.setBeatmapStatus(osuId, id.toLong(), status)
                 true
             } else {
                 false

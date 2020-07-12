@@ -30,6 +30,14 @@ object Events {
         return Event(userId, "Added Nominator", "Added ${nominator.osuName} as nominator.")
     }
 
+    fun asBeatmapDisqualifiedEvent(userId: Long, reason: String): Event {
+        return Event(userId, "Disqualified", reason)
+    }
+
+    fun asBeatmapPoppedEvent(userId: Long, reason: String): Event {
+        return Event(userId, "Popped", reason)
+    }
+
     fun asBeatmapStatusEvent(userId: Long, newStatus: Long): Event {
         return Event(userId, "Updated Status", "Updated status to ${BeatmapStatus.fromPrio(newStatus).getReadableName()}.")
     }

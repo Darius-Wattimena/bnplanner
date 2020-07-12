@@ -5,7 +5,6 @@ import nl.greaper.bnplanner.dataSource.UserDataSource
 import nl.greaper.bnplanner.exception.BeatmapException
 import nl.greaper.bnplanner.model.*
 import nl.greaper.bnplanner.model.beatmap.*
-import nl.greaper.bnplanner.model.event.DetailedEvent
 import nl.greaper.bnplanner.model.event.Events
 import nl.greaper.bnplanner.model.filter.BeatmapFilter
 import org.springframework.stereotype.Service
@@ -26,7 +25,7 @@ class BeatmapService(
         return if (beatmapSet != null) {
             val newBeatmap = Beatmap(beatmapId, beatmapSet.artist, beatmapSet.title, "", beatmapSet.creator, dateAdded = now, dateUpdated = now)
             dataSource.save(newBeatmap)
-            newBeatmap.events.add(Events.asBeatmapCreatedEvent(editorId))
+            newBeatmap.plannerEvents.add(Events.asBeatmapCreatedEvent(editorId))
             dataSource.save(newBeatmap)
             true
         } else {
@@ -54,7 +53,7 @@ class BeatmapService(
                 beatmap.status,
                 beatmap.nominators,
                 beatmap.interested,
-                beatmap.events,
+                beatmap.plannerEvents,
                 beatmap.nominatedByBNOne,
                 beatmap.nominatedByBNTwo
         )
@@ -105,7 +104,7 @@ class BeatmapService(
 
         if (oldArtist != beatmap.artist || oldTitle != beatmap.title ||
                 oldMapper != beatmap.mapper || oldNote != beatmap.note) {
-            beatmap.events.add(Events.asBeatmapMetadataModifiedEvent(editorId))
+            beatmap.plannerEvents.add(Events.asBeatmapMetadataModifiedEvent(editorId))
         }
 
         if (!oldNominators.containsAll(beatmap.nominators)) {
@@ -114,17 +113,17 @@ class BeatmapService(
                 if (oldNominator > 0) {
                     val oldNominatorUser = userDataSource.find(oldNominator)
                     if (newNominators.isEmpty()) {
-                        beatmap.events.add(Events.asBeatmapNominatorRemovedEvent(editorId, oldNominatorUser))
+                        beatmap.plannerEvents.add(Events.asBeatmapNominatorRemovedEvent(editorId, oldNominatorUser))
                     } else {
                         if (!newNominators.any { it.osuId == oldNominator }) {
-                            beatmap.events.add(Events.asBeatmapNominatorRemovedEvent(editorId, oldNominatorUser))
+                            beatmap.plannerEvents.add(Events.asBeatmapNominatorRemovedEvent(editorId, oldNominatorUser))
                         }
                     }
                 }
             }
 
             newNominators.filter { newNominator -> !oldNominators.any { newNominator.osuId == it }}.forEach {
-                beatmap.events.add(Events.asBeatmapNominatorAddedEvent(editorId, it))
+                beatmap.plannerEvents.add(Events.asBeatmapNominatorAddedEvent(editorId, it))
             }
         }
 
@@ -169,7 +168,7 @@ class BeatmapService(
 
         // Now check if the status got updated so we can update the rank date and add an event
         if (oldStatus != beatmap.status) {
-            beatmap.events.add(Events.asBeatmapStatusEvent(editorId, beatmap.status))
+            beatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editorId, beatmap.status))
 
             if (beatmap.status == BeatmapStatus.Ranked.prio) {
                 beatmap.dateRanked = now
@@ -183,15 +182,16 @@ class BeatmapService(
         dataSource.save(beatmap)
     }
 
-    fun setBeatmapStatus(editorId: Long, beatmapId: Long, newStatus: Long) {
+    fun setBeatmapStatus(editorId: Long, beatmapId: Long, statusUpdate: UpdatedBeatmapStatus) {
         val beatmap = dataSource.find(beatmapId)
+        val newStatus = statusUpdate.status
 
         // Status didn't change so we can ignore
         if (beatmap.status == newStatus) {
             return
         }
 
-        beatmap.events.add(Events.asBeatmapStatusEvent(editorId, newStatus))
+        beatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editorId, newStatus))
 
         val now = Instant.now().epochSecond
         beatmap.dateUpdated = now
@@ -199,6 +199,12 @@ class BeatmapService(
 
         when(newStatus) {
             BeatmapStatus.Popped.prio, BeatmapStatus.Disqualified.prio -> {
+                if (newStatus == BeatmapStatus.Popped.prio) {
+                    beatmap.osuEvents.add(Events.asBeatmapPoppedEvent(editorId, statusUpdate.reason))
+                } else {
+                    beatmap.osuEvents.add(Events.asBeatmapDisqualifiedEvent(editorId, statusUpdate.reason))
+                }
+
                 beatmap.nominatedByBNOne = false
                 beatmap.nominatedByBNTwo = false
             }

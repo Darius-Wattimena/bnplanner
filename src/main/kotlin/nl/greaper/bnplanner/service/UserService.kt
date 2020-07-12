@@ -3,7 +3,6 @@ package nl.greaper.bnplanner.service
 import nl.greaper.bnplanner.dataSource.UserDataSource
 import nl.greaper.bnplanner.exception.UserException
 import nl.greaper.bnplanner.model.FindResponse
-import nl.greaper.bnplanner.model.event.DetailedEvent
 import nl.greaper.bnplanner.model.event.Events
 import nl.greaper.bnplanner.model.filter.UserFilter
 import nl.greaper.bnplanner.model.user.*
@@ -29,7 +28,7 @@ class UserService(
                 user.hasEditPermissions,
                 user.hasAdminPermissions,
                 user.role,
-                user.events
+                user.plannerEvents
         )
     }
 
@@ -78,13 +77,13 @@ class UserService(
                 user.aliases.remove(updated.osuName)
             }
             
-            user.events.add(Events.asUserUpdateUsernameEvent(editorId, user.osuName, updated.osuName))
+            user.plannerEvents.add(Events.asUserUpdateUsernameEvent(editorId, user.osuName, updated.osuName))
             user.osuName = updated.osuName
         }
 
         if (user.role != updated.role) {
             user.role = updated.role
-            user.events.add(Events.asUserUpdateRoleEvent(editorId, updated.role))
+            user.plannerEvents.add(Events.asUserUpdateRoleEvent(editorId, updated.role))
         }
 
         if (user.hasAdminPermissions != updated.hasAdminPermissions) {
@@ -93,7 +92,7 @@ class UserService(
             } else {
                 Events.asUserRemoveAdminPermissionEvent(editorId)
             }
-            user.events.add(event)
+            user.plannerEvents.add(event)
             user.hasAdminPermissions = updated.hasAdminPermissions
         }
 
@@ -103,7 +102,7 @@ class UserService(
             } else {
                 Events.asUserRemoveEditPermissionEvent(editorId)
             }
-            user.events.add(event)
+            user.plannerEvents.add(event)
             user.hasEditPermissions = updated.hasEditPermissions
         }
 
@@ -123,7 +122,7 @@ class UserService(
                     foundUser.previous_usernames.toMutableList()
             )
             dataSource.save(user)
-            user.events.add(Events.asUserCreatedEvent(editorId))
+            user.plannerEvents.add(Events.asUserCreatedEvent(editorId))
             dataSource.save(user)
         }
     }
