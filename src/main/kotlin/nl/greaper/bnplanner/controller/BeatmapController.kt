@@ -4,6 +4,7 @@ import mu.KotlinLogging
 import nl.greaper.bnplanner.model.FindResponse
 import nl.greaper.bnplanner.model.beatmap.*
 import nl.greaper.bnplanner.model.filter.BeatmapFilter
+import nl.greaper.bnplanner.model.filter.BeatmapFilterLimit
 import nl.greaper.bnplanner.service.BeatmapService
 import nl.greaper.bnplanner.service.OsuService
 import org.springframework.web.bind.annotation.*
@@ -127,7 +128,7 @@ class BeatmapController(
             @RequestParam title: String?,
             @RequestParam mapper: String?,
             @RequestParam status: List<Long>?,
-            @RequestParam limit: Int?,
+            @RequestParam limit: BeatmapFilterLimit?,
             @RequestParam page: Int?,
             @RequestParam countTotal: Boolean?,
             @RequestParam hideGraved: Boolean?,
@@ -140,12 +141,12 @@ class BeatmapController(
                     artist,
                     title,
                     mapper,
-                    limit,
-                    page,
-                    countTotal,
                     hideGraved,
                     hideRanked,
                     hideWithTwoNominators,
+                    limit,
+                    page,
+                    countTotal,
                     status ?: emptyList(),
                     nominator ?: emptyList()
             ))

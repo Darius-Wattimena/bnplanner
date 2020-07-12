@@ -5,6 +5,7 @@ import nl.greaper.bnplanner.exception.UserException
 import nl.greaper.bnplanner.model.FindResponse
 import nl.greaper.bnplanner.model.event.DetailedEvent
 import nl.greaper.bnplanner.model.event.Events
+import nl.greaper.bnplanner.model.filter.UserFilter
 import nl.greaper.bnplanner.model.user.*
 import org.springframework.stereotype.Service
 
@@ -40,10 +41,8 @@ class UserService(
         return dataSource.findAll().sortedWith(compareBy({it.role}, {it.osuName}))
     }
 
-    fun findUsers(name: String?, roles: List<OsuRole>?, limit: Int?, page: Int?, countTotal: Boolean?, canEdit: Boolean?, isAdmin: Boolean?): FindResponse<FoundUser> {
-        val roleList = roles ?: emptyList()
-
-        val foundUsers = dataSource.findAll(name, roleList, limit, page, countTotal, canEdit, isAdmin)
+    fun findUsers(userFilter: UserFilter): FindResponse<FoundUser> {
+        val foundUsers = dataSource.findAll(userFilter)
 
         val result = foundUsers.response.map {user ->
             FoundUser(

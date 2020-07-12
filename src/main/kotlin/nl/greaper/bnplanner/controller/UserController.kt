@@ -1,6 +1,8 @@
 package nl.greaper.bnplanner.controller
 
 import nl.greaper.bnplanner.model.FindResponse
+import nl.greaper.bnplanner.model.filter.UserFilter
+import nl.greaper.bnplanner.model.filter.UserFilterLimit
 import nl.greaper.bnplanner.model.user.*
 import nl.greaper.bnplanner.service.OsuService
 import nl.greaper.bnplanner.service.UserService
@@ -53,14 +55,22 @@ class UserController(
     fun findUsers(
             @RequestParam name: String?,
             @RequestParam roles: List<OsuRole>?,
-            @RequestParam limit: Int?,
+            @RequestParam limit: UserFilterLimit?,
             @RequestParam page: Int?,
             @RequestParam countTotal: Boolean?,
             @RequestParam canEdit: Boolean?,
             @RequestParam isAdmin: Boolean?
     ): FindResponse<FoundUser> {
         return try {
-            return service.findUsers(name, roles, limit, page, countTotal, canEdit, isAdmin)
+            return service.findUsers(UserFilter(
+                    name,
+                    canEdit,
+                    isAdmin,
+                    limit,
+                    page,
+                    countTotal,
+                    roles ?: emptyList()
+            ))
         } catch (ex: Exception) {
             FindResponse()
         }

@@ -6,6 +6,7 @@ import com.mongodb.client.model.IndexOptions
 import nl.greaper.bnplanner.exception.UserException
 import nl.greaper.bnplanner.model.FindResponse
 import nl.greaper.bnplanner.model.beatmap.Beatmap
+import nl.greaper.bnplanner.model.filter.UserFilter
 import nl.greaper.bnplanner.model.user.OsuRole
 import nl.greaper.bnplanner.model.user.User
 import nl.greaper.bnplanner.util.quote
@@ -50,36 +51,36 @@ class UserDataSource(database: MongoDatabase) {
         return collection.find().toMutableList()
     }
 
-    fun findAll(name: String?, roles: List<OsuRole>, limit: Int?, page: Int?, countTotal: Boolean?, canEdit: Boolean?, isAdmin: Boolean?): FindResponse<User> {
+    fun findAll(filter: UserFilter): FindResponse<User> {
         val query = and(
                 and(listOfNotNull(
-                        if (name != null) User::osuName regex quote(name).toRegex(RegexOption.IGNORE_CASE) else null,
-                        if (canEdit != null) User::hasEditPermissions eq canEdit else null,
-                        if (isAdmin != null) User::hasAdminPermissions eq isAdmin else null
+                        if (filter.name != null) User::osuName regex quote(filter.name).toRegex(RegexOption.IGNORE_CASE) else null,
+                        if (filter.canEdit != null) User::hasEditPermissions eq filter.canEdit else null,
+                        if (filter.isAdmin != null) User::hasAdminPermissions eq filter.isAdmin else null
                 )),
                 or(listOfNotNull(
-                        if (roles.contains(OsuRole.OBS)) User::role eq OsuRole.OBS else null,
-                        if (roles.contains(OsuRole.BN)) User::role eq OsuRole.BN else null,
-                        if (roles.contains(OsuRole.PBN)) User::role eq OsuRole.PBN else null,
-                        if (roles.contains(OsuRole.CA)) User::role eq OsuRole.CA else null,
-                        if (roles.contains(OsuRole.NAT)) User::role eq OsuRole.NAT else null
+                        if (filter.roles.contains(OsuRole.OBS)) User::role eq OsuRole.OBS else null,
+                        if (filter.roles.contains(OsuRole.BN)) User::role eq OsuRole.BN else null,
+                        if (filter.roles.contains(OsuRole.PBN)) User::role eq OsuRole.PBN else null,
+                        if (filter.roles.contains(OsuRole.CA)) User::role eq OsuRole.CA else null,
+                        if (filter.roles.contains(OsuRole.NAT)) User::role eq OsuRole.NAT else null
                 )))
 
         val findQuery = collection.find(query)
                 .collation(Collation.builder().locale("en").build())
                 .sort(orderBy(User::osuName))
 
-        if (limit != null) {
-            findQuery.limit(limit)
+        if (filter.limit != null) {
+            findQuery.limit(filter.limit.asNumber())
+
+            if (filter.page != null && filter.page > 0) {
+                findQuery.skip((filter.page - 1) * filter.limit.asNumber())
+            }
         } else {
             findQuery.limit(10)
         }
 
-        if (page != null && limit != null && page > 0) {
-            findQuery.skip((page - 1) * limit)
-        }
-
-        val totalCount = if (countTotal != null && countTotal) {
+        val totalCount = if (filter.countTotal != null && filter.countTotal) {
             collection.countDocuments(query).toInt()
         } else {
             0

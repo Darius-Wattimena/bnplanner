@@ -50,8 +50,8 @@ class BeatmapDataSource(database: MongoDatabase) {
                         if (filter.title != null) { Beatmap::title regex quote(filter.title).toRegex(RegexOption.IGNORE_CASE) } else null,
                         if (filter.mapper != null) { Beatmap::mapper regex quote(filter.mapper).toRegex(RegexOption.IGNORE_CASE) } else null,
                         if (filter.nominator.isNotEmpty()) { Beatmap::nominators `in` filter.nominator } else null,
-                        if (filter.hideRanked != null && filter.hideRanked) { Beatmap::status ne BeatmapStatus.Ranked.prio } else null,
-                        if (filter.hideGraved != null && filter.hideGraved) { Beatmap::status ne BeatmapStatus.Graved.prio } else null,
+                        if (filter.hideRanked != null && !filter.hideRanked) null else Beatmap::status ne BeatmapStatus.Ranked.prio,
+                        if (filter.hideGraved != null && !filter.hideGraved) null else Beatmap::status ne BeatmapStatus.Graved.prio,
                         if (filter.hideWithTwoNominators != null && filter.hideWithTwoNominators) { Beatmap::nominators `in` listOf<Long>(0) } else null
                 )),
                 or(listOfNotNull(
@@ -68,13 +68,13 @@ class BeatmapDataSource(database: MongoDatabase) {
         val findQuery = collection.find(query)
 
         if (filter.limit != null) {
-            findQuery.limit(filter.limit)
+            findQuery.limit(filter.limit.asNumber())
+
+            if (filter.page != null && filter.page > 0) {
+                findQuery.skip((filter.page - 1) * filter.limit.asNumber())
+            }
         } else {
             findQuery.limit(10)
-        }
-
-        if (filter.page != null && filter.limit != null && filter.page > 0) {
-            findQuery.skip((filter.page - 1) * filter.limit)
         }
 
         val totalCount = if (filter.countTotal != null && filter.countTotal) {
