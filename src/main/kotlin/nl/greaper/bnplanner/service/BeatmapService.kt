@@ -54,6 +54,7 @@ class BeatmapService(
                 beatmap.nominators,
                 beatmap.interested,
                 beatmap.plannerEvents,
+                beatmap.osuEvents,
                 beatmap.nominatedByBNOne,
                 beatmap.nominatedByBNTwo
         )
@@ -85,62 +86,64 @@ class BeatmapService(
     }
 
     fun updateBeatmap(editorId: Long, beatmapId: Long, updated: UpdatedBeatmap) {
-        val beatmap = dataSource.find(beatmapId)
-        val oldArtist = beatmap.artist
-        val oldTitle = beatmap.title
-        val oldMapper = beatmap.mapper
-        val oldNote = beatmap.note
-        val oldStatus = beatmap.status
-        val oldNominators = beatmap.nominators
+        val databaseBeatmap = dataSource.find(beatmapId)
+        val oldArtist = databaseBeatmap.artist
+        val oldTitle = databaseBeatmap.title
+        val oldMapper = databaseBeatmap.mapper
+        val oldNote = databaseBeatmap.note
+        val oldStatus = databaseBeatmap.status
+        val oldNominators = databaseBeatmap.nominators
 
-        beatmap.status = updated.status ?: beatmap.status
-        beatmap.artist = updated.artist ?: beatmap.artist
-        beatmap.title = updated.title ?: beatmap.title
-        beatmap.mapper = updated.mapper ?: beatmap.mapper
-        beatmap.note = updated.note ?: beatmap.note
-        beatmap.nominators = updated.nominators ?: beatmap.nominators
-        beatmap.nominatedByBNOne = updated.nominatedByBNOne
-        beatmap.nominatedByBNTwo = updated.nominatedByBNTwo
+        val updatedBeatmap = databaseBeatmap.copy(
+                status = updated.status ?: databaseBeatmap.status,
+                artist = updated.artist ?: databaseBeatmap.artist ,
+                title = updated.title ?: databaseBeatmap.title,
+                mapper = updated.mapper ?: databaseBeatmap.mapper,
+                note = updated.note ?: databaseBeatmap.note,
+                nominators = updated.nominators.map { it ?: 0 },
+                nominatedByBNOne = updated.nominatedByBNOne,
+                nominatedByBNTwo = updated.nominatedByBNTwo
+        )
 
-        if (oldArtist != beatmap.artist || oldTitle != beatmap.title ||
-                oldMapper != beatmap.mapper || oldNote != beatmap.note) {
-            beatmap.plannerEvents.add(Events.asBeatmapMetadataModifiedEvent(editorId))
+        if (oldArtist != updatedBeatmap.artist || oldTitle != updatedBeatmap.title ||
+                oldMapper != updatedBeatmap.mapper) {
+            updatedBeatmap.plannerEvents.add(Events.asBeatmapMetadataModifiedEvent(editorId))
         }
 
-        if (!oldNominators.containsAll(beatmap.nominators)) {
-            val newNominators = beatmap.nominators.mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null }
+        if (oldNote != updatedBeatmap.note) {
+            updatedBeatmap.plannerEvents.add(Events.asBeatmapNoteModifiedEvent(editorId))
+        }
+
+        if (!oldNominators.containsAll(updatedBeatmap.nominators)) {
+            val newNominators = updatedBeatmap.nominators.filter { !oldNominators.contains(it) }
+                    .mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null }
             for (oldNominator in oldNominators) {
                 if (oldNominator > 0) {
                     val oldNominatorUser = userDataSource.find(oldNominator)
-                    if (newNominators.isEmpty()) {
-                        beatmap.plannerEvents.add(Events.asBeatmapNominatorRemovedEvent(editorId, oldNominatorUser))
-                    } else {
-                        if (!newNominators.any { it.osuId == oldNominator }) {
-                            beatmap.plannerEvents.add(Events.asBeatmapNominatorRemovedEvent(editorId, oldNominatorUser))
-                        }
-                    }
+                    updatedBeatmap.plannerEvents.add(Events.asBeatmapNominatorRemovedEvent(editorId, oldNominatorUser))
                 }
             }
 
-            newNominators.filter { newNominator -> !oldNominators.any { newNominator.osuId == it }}.forEach {
-                beatmap.plannerEvents.add(Events.asBeatmapNominatorAddedEvent(editorId, it))
+            newNominators.forEach {
+                updatedBeatmap.plannerEvents.add(Events.asBeatmapNominatorAddedEvent(editorId, it))
             }
         }
 
         val now = Instant.now().epochSecond
-        beatmap.dateUpdated = now
+        var nominatedByBNOne = updatedBeatmap.nominatedByBNOne
+        var nominatedByBNTwo = updatedBeatmap.nominatedByBNTwo
 
         // When a nominator is remove we set their respective flag to false
-        if (!updated.nominators.isNullOrEmpty()) {
-            val nominatorOne = updated.nominators[0]
-            val nominatorTwo = updated.nominators[1]
+        if (!updatedBeatmap.nominators.isNullOrEmpty()) {
+            val nominatorOne = updatedBeatmap.nominators[0]
+            val nominatorTwo = updatedBeatmap.nominators[1]
 
             if (nominatorOne == 0L) {
-                beatmap.nominatedByBNOne = false
+                nominatedByBNOne = false
             }
 
             if (nominatorTwo == 0L) {
-                beatmap.nominatedByBNTwo = false
+                nominatedByBNTwo = false
             }
         }
 
@@ -150,71 +153,104 @@ class BeatmapService(
          * - To Bubbled when only 1 nominator nominated the set
          * - To Qualified when 2 nominators nominated the set
          */
-        when(beatmap.nominatedByBNOne to beatmap.nominatedByBNTwo) {
+        val newStatus = when(nominatedByBNOne to nominatedByBNTwo) {
             true to true -> {
-                if (beatmap.status != BeatmapStatus.Ranked.prio) {
-                    beatmap.status = BeatmapStatus.Qualified.prio
+                if (updatedBeatmap.status != BeatmapStatus.Ranked.prio) {
+                    BeatmapStatus.Qualified.prio
+                } else {
+                    updatedBeatmap.status
                 }
             }
             true to false, false to true -> {
-                beatmap.status = BeatmapStatus.Bubbled.prio
+                BeatmapStatus.Bubbled.prio
             }
             false to false -> {
-                if (beatmap.status != BeatmapStatus.Popped.prio && beatmap.status != BeatmapStatus.Disqualified.prio) {
-                    beatmap.status = BeatmapStatus.Pending.prio
+                if (updatedBeatmap.status != BeatmapStatus.Popped.prio && updatedBeatmap.status != BeatmapStatus.Disqualified.prio) {
+                    BeatmapStatus.Pending.prio
+                } else{
+                    updatedBeatmap.status
                 }
             }
+            else -> updatedBeatmap.status
         }
 
         // Now check if the status got updated so we can update the rank date and add an event
-        if (oldStatus != beatmap.status) {
-            beatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editorId, beatmap.status))
-
-            if (beatmap.status == BeatmapStatus.Ranked.prio) {
-                beatmap.dateRanked = now
-            } else if (oldStatus != BeatmapStatus.Ranked.prio) {
-                // When someone accidental sets the map to ranked before
-                // We don't want to have an incorrect ranked timestamp but instead reset it back to 0
-                beatmap.dateRanked = 0
+        val dateRanked = if (oldStatus != newStatus) {
+            when (updatedBeatmap.status) {
+                BeatmapStatus.Pending.prio, BeatmapStatus.Graved.prio -> {
+                    updatedBeatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editorId, newStatus))
+                }
+                else -> {
+                    updatedBeatmap.osuEvents.add(Events.asBeatmapStatusEvent(editorId, newStatus))
+                }
             }
+
+            when {
+                newStatus == BeatmapStatus.Ranked.prio -> {
+                    now
+                }
+                oldStatus != BeatmapStatus.Ranked.prio -> {
+                    // When someone accidental sets the map to ranked before
+                    // We don't want to have an incorrect ranked timestamp but instead reset it back to 0
+                    0
+                }
+                else -> {
+                    updatedBeatmap.dateRanked
+                }
+            }
+        } else {
+            updatedBeatmap.dateRanked
         }
 
-        dataSource.save(beatmap)
+        dataSource.save(updatedBeatmap.copy(
+                nominatedByBNOne = nominatedByBNOne,
+                nominatedByBNTwo = nominatedByBNTwo,
+                status = newStatus,
+                dateUpdated = now,
+                dateRanked = dateRanked
+        ))
     }
 
     fun setBeatmapStatus(editorId: Long, beatmapId: Long, statusUpdate: UpdatedBeatmapStatus) {
-        val beatmap = dataSource.find(beatmapId)
+        val databaseBeatmap = dataSource.find(beatmapId)
         val newStatus = statusUpdate.status
 
         // Status didn't change so we can ignore
-        if (beatmap.status == newStatus) {
+        if (databaseBeatmap.status == newStatus) {
             return
         }
 
-        beatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editorId, newStatus))
+        databaseBeatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editorId, newStatus))
 
         val now = Instant.now().epochSecond
-        beatmap.dateUpdated = now
-        beatmap.dateRanked = 0
+        var nominatedByBNOne = databaseBeatmap.nominatedByBNOne
+        var nominatedByBNTwo = databaseBeatmap.nominatedByBNTwo
+        var dateRanked = 0L
 
         when(newStatus) {
             BeatmapStatus.Popped.prio, BeatmapStatus.Disqualified.prio -> {
                 if (newStatus == BeatmapStatus.Popped.prio) {
-                    beatmap.osuEvents.add(Events.asBeatmapPoppedEvent(editorId, statusUpdate.reason))
+                    databaseBeatmap.osuEvents.add(Events.asBeatmapPoppedEvent(editorId, statusUpdate.reason))
                 } else {
-                    beatmap.osuEvents.add(Events.asBeatmapDisqualifiedEvent(editorId, statusUpdate.reason))
+                    databaseBeatmap.osuEvents.add(Events.asBeatmapDisqualifiedEvent(editorId, statusUpdate.reason))
                 }
 
-                beatmap.nominatedByBNOne = false
-                beatmap.nominatedByBNTwo = false
+                nominatedByBNOne = false
+                nominatedByBNTwo = false
             }
             BeatmapStatus.Ranked.prio -> {
-                beatmap.dateRanked = now
-                beatmap.nominatedByBNOne = true
-                beatmap.nominatedByBNTwo = true
+                dateRanked = now
+                nominatedByBNOne = true
+                nominatedByBNTwo = true
             }
         }
-        beatmap.status = newStatus
-        dataSource.save(beatmap)
+
+        dataSource.save(databaseBeatmap.copy(
+                nominatedByBNOne = nominatedByBNOne,
+                nominatedByBNTwo = nominatedByBNTwo,
+                dateUpdated = now,
+                dateRanked = dateRanked,
+                status = newStatus
+        ))
     }
 }

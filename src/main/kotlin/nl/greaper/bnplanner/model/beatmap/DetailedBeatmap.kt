@@ -4,14 +4,15 @@ import nl.greaper.bnplanner.model.event.Event
 
 data class DetailedBeatmap (
         val osuId: Long,
-        var artist: String,
-        var title: String,
-        var note: String,
-        var mapper: String,
-        var status: Long,
-        var nominators: MutableList<Long>,
+        val artist: String,
+        val title: String,
+        val note: String,
+        val mapper: String,
+        val status: Long,
+        val nominators: List<Long>,
         val interested: MutableList<Long>,
-        val events: List<Event>,
+        val plannerEvents: List<Event>,
+        val osuEvents: List<Event>,
         val nominatedByBNOne: Boolean = false,
         val nominatedByBNTwo: Boolean = false
 )

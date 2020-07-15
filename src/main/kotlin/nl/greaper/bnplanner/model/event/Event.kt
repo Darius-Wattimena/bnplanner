@@ -22,6 +22,10 @@ object Events {
         return Event(userId, "Updated Metadata", "Updated the metadata.")
     }
 
+    fun asBeatmapNoteModifiedEvent(userId: Long): Event {
+        return Event(userId, "Updated Note", "Updated the note.")
+    }
+
     fun asBeatmapNominatorRemovedEvent(userId: Long, oldNominator: User): Event {
         return Event(userId, "Removed Nominator", "Removed ${oldNominator.osuName} as nominator.")
     }

@@ -6,20 +6,20 @@ import org.bson.codecs.pojo.annotations.BsonId
 data class Beatmap(
         @BsonId
         val osuId: Long,
-        var artist: String,
-        var title: String,
-        var note: String,
-        var mapper: String,
-        var status: Long = BeatmapStatus.Pending.prio,
-        var nominators: MutableList<Long> = mutableListOf(0, 0),
+        val artist: String,
+        val title: String,
+        val note: String,
+        val mapper: String,
+        val status: Long = BeatmapStatus.Pending.prio,
+        val nominators: List<Long> = listOf(0, 0),
         val interested: MutableList<Long> = mutableListOf(),
         val plannerEvents: MutableList<Event> = mutableListOf(),
         val osuEvents: MutableList<Event> = mutableListOf(),
-        var dateAdded: Long = 0,
-        var dateUpdated: Long = 0,
-        var dateRanked: Long = 0,
-        var nominatedByBNOne: Boolean = false,
-        var nominatedByBNTwo: Boolean = false
+        val dateAdded: Long = 0,
+        val dateUpdated: Long = 0,
+        val dateRanked: Long = 0,
+        val nominatedByBNOne: Boolean = false,
+        val nominatedByBNTwo: Boolean = false
 )
 
 enum class BeatmapStatus(val prio: Long) {
