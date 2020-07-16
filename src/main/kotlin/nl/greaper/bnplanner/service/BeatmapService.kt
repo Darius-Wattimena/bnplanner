@@ -85,6 +85,7 @@ class BeatmapService(
         )
     }
 
+    //TODO write unit test
     fun updateBeatmap(editorId: Long, beatmapId: Long, updated: UpdatedBeatmap) {
         val databaseBeatmap = dataSource.find(beatmapId)
         val oldArtist = databaseBeatmap.artist
@@ -115,16 +116,16 @@ class BeatmapService(
         }
 
         if (!oldNominators.containsAll(updatedBeatmap.nominators)) {
-            val newNominators = updatedBeatmap.nominators.filter { !oldNominators.contains(it) }
+            val addedNominators = updatedBeatmap.nominators.filter { !oldNominators.contains(it) }
                     .mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null }
-            for (oldNominator in oldNominators) {
-                if (oldNominator > 0) {
-                    val oldNominatorUser = userDataSource.find(oldNominator)
-                    updatedBeatmap.plannerEvents.add(Events.asBeatmapNominatorRemovedEvent(editorId, oldNominatorUser))
-                }
+            val removedNominators = oldNominators.filter { !updatedBeatmap.nominators.contains(it) }
+                    .mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null }
+
+            removedNominators.forEach {
+                updatedBeatmap.plannerEvents.add(Events.asBeatmapNominatorRemovedEvent(editorId, it))
             }
 
-            newNominators.forEach {
+            addedNominators.forEach {
                 updatedBeatmap.plannerEvents.add(Events.asBeatmapNominatorAddedEvent(editorId, it))
             }
         }
