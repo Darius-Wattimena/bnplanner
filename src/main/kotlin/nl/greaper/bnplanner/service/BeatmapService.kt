@@ -177,7 +177,7 @@ class BeatmapService(
 
         // Now check if the status got updated so we can update the rank date and add an event
         val dateRanked = if (oldStatus != newStatus) {
-            when (updatedBeatmap.status) {
+            when (newStatus) {
                 BeatmapStatus.Pending.prio, BeatmapStatus.Graved.prio -> {
                     updatedBeatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editorId, newStatus))
                 }
@@ -230,10 +230,12 @@ class BeatmapService(
 
         when(newStatus) {
             BeatmapStatus.Popped.prio, BeatmapStatus.Disqualified.prio -> {
+                val reason = statusUpdate.reason ?: ""
+
                 if (newStatus == BeatmapStatus.Popped.prio) {
-                    databaseBeatmap.osuEvents.add(Events.asBeatmapPoppedEvent(editorId, statusUpdate.reason))
+                    databaseBeatmap.osuEvents.add(Events.asBeatmapPoppedEvent(editorId, reason))
                 } else {
-                    databaseBeatmap.osuEvents.add(Events.asBeatmapDisqualifiedEvent(editorId, statusUpdate.reason))
+                    databaseBeatmap.osuEvents.add(Events.asBeatmapDisqualifiedEvent(editorId, reason))
                 }
 
                 nominatedByBNOne = false
