@@ -38,9 +38,8 @@ class BeatmapDataSource(database: MongoDatabase) {
     }
 
     fun find(beatmapSetId: Long): Beatmap {
-        return collection.findOne(
-                Beatmap::osuId eq beatmapSetId
-        ) ?: throw BeatmapException("Beatmap not registered on the planner")
+        return collection.findOneById(beatmapSetId)
+                ?: throw BeatmapException("Beatmap not registered on the planner")
     }
 
     fun findAll(filter: BeatmapFilter): FindResponse<Beatmap> {

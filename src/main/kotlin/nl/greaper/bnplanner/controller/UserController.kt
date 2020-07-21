@@ -1,5 +1,6 @@
 package nl.greaper.bnplanner.controller
 
+import mu.KotlinLogging
 import nl.greaper.bnplanner.model.FindResponse
 import nl.greaper.bnplanner.model.filter.UserFilter
 import nl.greaper.bnplanner.model.filter.UserFilterLimit
@@ -14,11 +15,14 @@ class UserController(
         val service: UserService,
         val osuService: OsuService
 ) {
+    private val log = KotlinLogging.logger {}
+
     @GetMapping("/withAuth/{authId}")
     fun findUserWithAuth(@PathVariable("authId") authId: String): User? {
         return try {
             service.findUserWithAuth(authId)
         } catch (ex: Exception) {
+            log.error("Error while executing Request", ex)
             null
         }
     }
@@ -28,6 +32,7 @@ class UserController(
         return try {
             service.findUser(osuId.toLong())
         } catch (ex: Exception) {
+            log.error("Error while executing Request", ex)
             null
         }
     }
@@ -37,6 +42,7 @@ class UserController(
         return try {
             service.findDetailedUser(osuId.toLong())
         } catch (ex: Exception) {
+            log.error("Error while executing Request", ex)
             null
         }
     }
@@ -46,6 +52,7 @@ class UserController(
         return try {
             return service.findUsers()
         } catch (ex: Exception) {
+            log.error("Error while executing Request", ex)
             emptyList()
         }
     }
@@ -72,6 +79,7 @@ class UserController(
                     roles ?: emptyList()
             ))
         } catch (ex: Exception) {
+            log.error("Error while executing Request", ex)
             FindResponse()
         }
     }
@@ -91,6 +99,7 @@ class UserController(
                 false
             }
         } catch (ex: Exception) {
+            log.error("Error while executing Request", ex)
             false
         }
     }
@@ -111,6 +120,7 @@ class UserController(
                 false
             }
         } catch (ex: Exception) {
+            log.error("Error while executing Request", ex)
             false
         }
     }

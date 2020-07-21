@@ -1,38 +1,62 @@
 package nl.greaper.bnplanner.controller
 
 import mu.KotlinLogging
-import nl.greaper.bnplanner.model.tournament.ModdingResponse
-import nl.greaper.bnplanner.service.ModdingResponseService
+import nl.greaper.bnplanner.model.tournament.ModdingComment
+import nl.greaper.bnplanner.service.ModdingCommentService
 import nl.greaper.bnplanner.service.OsuService
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/v1/modding/response")
-class ModdingResponseController(
-        val service: ModdingResponseService,
+@RequestMapping("/v1/modding/comment")
+class ModdingCommentController(
+        val service: ModdingCommentService,
         val osuService: OsuService
 ) {
     private val log = KotlinLogging.logger {}
 
     @GetMapping("/{id}")
-    fun findContest(
+    fun find(
             @RequestHeader(name = "Osu-Id") osuId: Long,
             @RequestHeader(name = "Authorization") token: String,
             @PathVariable("id") id: String
-    ): ModdingResponse? {
+    ): ModdingComment? {
         return try {
-            service.find(id)
+            val user = osuService.getUserFromToken(token, osuId)
+            if (user != null && user.hasHiddenPermissions) {
+                service.find(id)
+            } else {
+                null
+            }
         } catch (ex: Exception) {
             log.error("Error while executing Request", ex)
             null
         }
     }
 
-    @PostMapping("/add")
-    fun addContest(
+    @GetMapping("/findByModdingMapId")
+    fun findByModdingMapId(
             @RequestHeader(name = "Osu-Id") osuId: Long,
             @RequestHeader(name = "Authorization") token: String,
-            @RequestBody item: ModdingResponse
+            @RequestParam moddingMapId: String
+    ): List<ModdingComment> {
+        return try {
+            val user = osuService.getUserFromToken(token, osuId)
+            if (user != null && user.hasHiddenPermissions) {
+                service.findAllByModdingMapId(moddingMapId)
+            } else {
+                emptyList()
+            }
+        } catch (ex: Exception) {
+            log.error("Error while executing Request", ex)
+            emptyList()
+        }
+    }
+
+    @PostMapping("/add")
+    fun add(
+            @RequestHeader(name = "Osu-Id") osuId: Long,
+            @RequestHeader(name = "Authorization") token: String,
+            @RequestBody item: ModdingComment
     ): Boolean {
         return try {
             val user = osuService.getUserFromToken(token, osuId)

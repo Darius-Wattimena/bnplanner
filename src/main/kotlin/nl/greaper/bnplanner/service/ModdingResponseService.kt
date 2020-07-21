@@ -1,26 +1,22 @@
 package nl.greaper.bnplanner.service
 
-import nl.greaper.bnplanner.dataSource.*
-import nl.greaper.bnplanner.exception.BeatmapException
-import nl.greaper.bnplanner.model.*
-import nl.greaper.bnplanner.model.beatmap.*
-import nl.greaper.bnplanner.model.event.Events
-import nl.greaper.bnplanner.model.filter.BeatmapFilter
-import nl.greaper.bnplanner.model.tournament.Contest
-import nl.greaper.bnplanner.model.tournament.ModdingComment
-import nl.greaper.bnplanner.model.tournament.ModdingMap
+import nl.greaper.bnplanner.dataSource.ModdingResponseDataSource
+import nl.greaper.bnplanner.model.tournament.ModdingResponse
 import org.springframework.stereotype.Service
-import java.time.Instant
 
 @Service
-class ModdingCommentService(
-        val dataSource: ModdingCommentDataSource,
+class ModdingResponseService(
+        val dataSource: ModdingResponseDataSource,
 ) {
-    fun find(id: String): ModdingComment? {
+    fun find(id: String): ModdingResponse? {
         return dataSource.find(id)
     }
 
-    fun save(item: ModdingComment): Boolean {
+    fun findByModdingComment(id: String): List<ModdingResponse> {
+        return dataSource.findByModdingComment(id).toList()
+    }
+
+    fun save(item: ModdingResponse): Boolean {
         dataSource.save(item)
         return true
     }

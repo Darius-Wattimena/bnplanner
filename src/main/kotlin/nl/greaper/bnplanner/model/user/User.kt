@@ -11,6 +11,7 @@ data class User(
         var aliases: MutableList<String> = mutableListOf(),
         var hasEditPermissions: Boolean = false,
         var hasAdminPermissions: Boolean = false,
+        var hasHiddenPermissions: Boolean = false,
         var authId: String? = null,
         var role: OsuRole = OsuRole.OBS,
         val plannerEvents: MutableList<Event> = mutableListOf(),

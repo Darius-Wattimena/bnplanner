@@ -1,18 +1,21 @@
 package nl.greaper.bnplanner.dataSource
 
 import com.mongodb.client.MongoDatabase
-import nl.greaper.bnplanner.model.tournament.Contest
+import nl.greaper.bnplanner.model.tournament.ModdingComment
+import org.litote.kmongo.eq
 import org.litote.kmongo.findOneById
 import org.litote.kmongo.save
 import org.springframework.stereotype.Component
 
 @Component
-class ContestDataSource(database: MongoDatabase) {
-    private val collection = database.getCollection("contest", Contest::class.java)
+class ModdingCommentDataSource(database: MongoDatabase) {
+    private val collection = database.getCollection("moddingComment", ModdingComment::class.java)
 
-    fun save(contest: Contest) = collection.save(contest)
+    fun save(item: ModdingComment) = collection.save(item)
 
     fun find(id: String) = collection.findOneById(id)
+
+    fun findAllByModdingMap(moddingMapId: String) = collection.find(ModdingComment::moddingMapId eq moddingMapId)
 
     fun findAll() = collection.find()
 }

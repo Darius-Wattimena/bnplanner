@@ -1,4 +1,11 @@
 package nl.greaper.bnplanner.model.tournament
 
-class ModdingResponse {
-}
+import org.bson.codecs.pojo.annotations.BsonId
+
+data class ModdingResponse(
+        @BsonId
+        val _id: String,
+        val moddingCommentId: String,
+        val authorOsuId: String,
+        val content: String
+)

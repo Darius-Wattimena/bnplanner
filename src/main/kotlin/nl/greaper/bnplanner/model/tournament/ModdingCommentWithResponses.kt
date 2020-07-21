@@ -1,4 +1,7 @@
 package nl.greaper.bnplanner.model.tournament
 
-class ModdingCommentWithResponses {
-}
+data class ModdingCommentWithResponses(
+        val moddingComment: ModdingComment,
+        val moddingResponses: List<ModdingResponse>
+
+)
