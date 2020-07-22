@@ -35,6 +35,25 @@ class ModdingCommentController(
         }
     }
 
+    @DeleteMapping("/{id}/delete")
+    fun delete(
+            @RequestHeader(name = "Osu-Id") osuId: Long,
+            @RequestHeader(name = "Authorization") token: String,
+            @PathVariable("id") id: String
+    ): Boolean {
+        return try {
+            val user = osuService.getUserFromToken(token, osuId)
+            if (user != null && user.hasHiddenPermissions) {
+                service.delete(id)
+            } else {
+                false
+            }
+        } catch (ex: Exception) {
+            log.error("Error while executing Request", ex)
+            false
+        }
+    }
+
     @GetMapping("/findByModdingMapId")
     fun findByModdingMapId(
             @RequestHeader(name = "Osu-Id") osuId: Long,
@@ -56,6 +75,25 @@ class ModdingCommentController(
 
     @PostMapping("/add")
     fun add(
+            @RequestHeader(name = "Osu-Id") osuId: Long,
+            @RequestHeader(name = "Authorization") token: String,
+            @RequestBody item: ModdingComment
+    ): Boolean {
+        return try {
+            val user = osuService.getUserFromToken(token, osuId)
+            if (user != null && user.hasHiddenPermissions) {
+                return service.save(item)
+            } else {
+                false
+            }
+        } catch (ex: Exception) {
+            log.error("Error while executing Request", ex)
+            false
+        }
+    }
+
+    @PutMapping("/edit")
+    fun edit(
             @RequestHeader(name = "Osu-Id") osuId: Long,
             @RequestHeader(name = "Authorization") token: String,
             @RequestBody item: ModdingComment

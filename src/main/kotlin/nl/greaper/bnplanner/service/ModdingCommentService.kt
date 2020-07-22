@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service
 @Service
 class ModdingCommentService(
         val dataSource: ModdingCommentDataSource,
+        val responseService: ModdingResponseService
 ) {
     fun find(id: String): ModdingComment? {
         return dataSource.find(id)
@@ -38,5 +39,10 @@ class ModdingCommentService(
         }
 
         return false
+    }
+
+    fun delete(id: String): Boolean {
+        responseService.deleteByCommentId(id)
+        return dataSource.delete(id)
     }
 }

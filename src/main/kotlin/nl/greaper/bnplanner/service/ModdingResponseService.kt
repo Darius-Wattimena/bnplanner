@@ -26,4 +26,12 @@ class ModdingResponseService(
         dataSource.save(itemWithId)
         return true
     }
+
+    fun delete(id: String): Boolean {
+        return dataSource.delete(id)
+    }
+
+    fun deleteByCommentId(commentId: String): Boolean {
+        return dataSource.deleteByCommentId(commentId)
+    }
 }

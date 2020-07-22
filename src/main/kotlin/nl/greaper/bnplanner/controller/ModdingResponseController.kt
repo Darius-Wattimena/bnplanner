@@ -33,6 +33,25 @@ class ModdingResponseController(
         }
     }
 
+    @DeleteMapping("/{id}/delete")
+    fun delete(
+            @RequestHeader(name = "Osu-Id") osuId: Long,
+            @RequestHeader(name = "Authorization") token: String,
+            @PathVariable("id") id: String
+    ): Boolean {
+        return try {
+            val user = osuService.getUserFromToken(token, osuId)
+            if (user != null && user.hasHiddenPermissions) {
+                service.delete(id)
+            } else {
+                false
+            }
+        } catch (ex: Exception) {
+            log.error("Error while executing Request", ex)
+            false
+        }
+    }
+
     @PostMapping("/add")
     fun add(
             @RequestHeader(name = "Osu-Id") osuId: Long,
@@ -52,8 +71,8 @@ class ModdingResponseController(
         }
     }
 
-    @PutMapping("/update")
-    fun update(
+    @PutMapping("/edit")
+    fun edit(
             @RequestHeader(name = "Osu-Id") osuId: Long,
             @RequestHeader(name = "Authorization") token: String,
             @RequestBody item: ModdingResponse
