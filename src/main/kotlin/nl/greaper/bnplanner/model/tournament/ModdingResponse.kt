@@ -6,6 +6,6 @@ data class ModdingResponse(
         @BsonId
         val _id: String,
         val moddingCommentId: String,
-        val authorOsuId: String,
+        val authorOsuId: Long,
         val content: String
 )

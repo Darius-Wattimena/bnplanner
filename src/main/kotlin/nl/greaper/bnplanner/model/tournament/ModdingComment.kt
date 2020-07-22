@@ -6,7 +6,7 @@ data class ModdingComment(
         @BsonId
         val _id: String,
         val moddingMapId: String,
-        val authorOsuId: String,
+        val authorOsuId: Long,
         val osuTimestamp: String,
         val content: String,
         val resolved: Boolean

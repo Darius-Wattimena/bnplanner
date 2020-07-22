@@ -2,6 +2,7 @@ package nl.greaper.bnplanner.service
 
 import nl.greaper.bnplanner.dataSource.ModdingResponseDataSource
 import nl.greaper.bnplanner.model.tournament.ModdingResponse
+import nl.greaper.bnplanner.util.copyableRandomUUID
 import org.springframework.stereotype.Service
 
 @Service
@@ -17,7 +18,12 @@ class ModdingResponseService(
     }
 
     fun save(item: ModdingResponse): Boolean {
-        dataSource.save(item)
+        val itemWithId = if (item._id == "") {
+            item.copy(_id = copyableRandomUUID())
+        } else {
+            item
+        }
+        dataSource.save(itemWithId)
         return true
     }
 }
