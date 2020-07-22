@@ -27,4 +27,16 @@ class ModdingCommentService(
         dataSource.save(itemWithId)
         return true
     }
+
+    fun updateStatus(id: String, newStatus: Boolean): Boolean {
+        val comment = find(id)
+
+        if (comment != null) {
+            if (comment.resolved != newStatus) {
+                return save(comment.copy(resolved = newStatus))
+            }
+        }
+
+        return false
+    }
 }

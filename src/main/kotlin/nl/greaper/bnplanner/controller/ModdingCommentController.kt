@@ -1,7 +1,9 @@
 package nl.greaper.bnplanner.controller
 
 import mu.KotlinLogging
+import nl.greaper.bnplanner.model.NewStatus
 import nl.greaper.bnplanner.model.tournament.ModdingComment
+import nl.greaper.bnplanner.model.tournament.ModdingResponse
 import nl.greaper.bnplanner.service.ModdingCommentService
 import nl.greaper.bnplanner.service.OsuService
 import org.springframework.web.bind.annotation.*
@@ -62,6 +64,26 @@ class ModdingCommentController(
             val user = osuService.getUserFromToken(token, osuId)
             if (user != null && user.hasHiddenPermissions) {
                 return service.save(item)
+            } else {
+                false
+            }
+        } catch (ex: Exception) {
+            log.error("Error while executing Request", ex)
+            false
+        }
+    }
+
+    @PutMapping("/{id}/resolve")
+    fun resolve(
+            @RequestHeader(name = "Osu-Id") osuId: Long,
+            @RequestHeader(name = "Authorization") token: String,
+            @PathVariable("id") id: String,
+            @RequestBody newStatus: NewStatus
+    ): Boolean {
+        return try {
+            val user = osuService.getUserFromToken(token, osuId)
+            if (user != null && user.hasHiddenPermissions) {
+                return service.updateStatus(id, newStatus.status)
             } else {
                 false
             }
