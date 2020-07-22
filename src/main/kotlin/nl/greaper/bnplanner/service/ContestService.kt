@@ -6,7 +6,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class ContestService(
-        val dataSource: ContestDataSource,
+        val dataSource: ContestDataSource
 ) {
     fun find(id: String): Contest? {
         return dataSource.find(id)

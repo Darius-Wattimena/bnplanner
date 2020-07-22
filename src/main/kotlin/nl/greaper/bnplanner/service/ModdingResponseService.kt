@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service
 
 @Service
 class ModdingResponseService(
-        val dataSource: ModdingResponseDataSource,
+        val dataSource: ModdingResponseDataSource
 ) {
     fun find(id: String): ModdingResponse? {
         return dataSource.find(id)
