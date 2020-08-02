@@ -128,7 +128,7 @@ class BeatmapController(
             @RequestParam title: String?,
             @RequestParam mapper: String?,
             @RequestParam status: List<Long>?,
-            @RequestParam limit: BeatmapFilterLimit?,
+            @RequestParam limit: BeatmapFilterLimit,
             @RequestParam page: Int?,
             @RequestParam countTotal: Boolean?,
             @RequestParam hideGraved: Boolean?,
@@ -147,6 +147,7 @@ class BeatmapController(
                     limit,
                     page,
                     countTotal,
+                    false,
                     status ?: emptyList(),
                     nominator ?: emptyList()
             ))

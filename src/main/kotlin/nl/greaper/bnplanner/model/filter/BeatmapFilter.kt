@@ -12,6 +12,7 @@ data class BeatmapFilter(
         val limit: BeatmapFilterLimit?,
         val page: Int?,
         val countTotal: Boolean? = false,
+        val asStatistics: Boolean = false,
 
         val status: List<Long> = emptyList(),
         val nominator: List<Long> = emptyList()

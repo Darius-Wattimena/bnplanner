@@ -73,7 +73,9 @@ class BeatmapDataSource(database: MongoDatabase) {
                 findQuery.skip((filter.page - 1) * filter.limit.asNumber())
             }
         } else {
-            findQuery.limit(10)
+            if (!filter.asStatistics) {
+                findQuery.limit(10)
+            }
         }
 
         val totalCount = if (filter.countTotal != null && filter.countTotal) {
@@ -86,5 +88,9 @@ class BeatmapDataSource(database: MongoDatabase) {
 
         val result = findQuery.toMutableList()
         return FindResponse(totalCount, result.count(), result)
+    }
+
+    fun countAll(): Long {
+        return collection.countDocuments()
     }
 }
