@@ -59,11 +59,12 @@ class UserDataSource(database: MongoDatabase) {
                         if (filter.isAdmin != null) User::hasAdminPermissions eq filter.isAdmin else null
                 )),
                 or(listOfNotNull(
-                        if (filter.roles.contains(OsuRole.OBS)) User::role eq OsuRole.OBS else null,
                         if (filter.roles.contains(OsuRole.BN)) User::role eq OsuRole.BN else null,
                         if (filter.roles.contains(OsuRole.PBN)) User::role eq OsuRole.PBN else null,
                         if (filter.roles.contains(OsuRole.CA)) User::role eq OsuRole.CA else null,
-                        if (filter.roles.contains(OsuRole.NAT)) User::role eq OsuRole.NAT else null
+                        if (filter.roles.contains(OsuRole.NAT)) User::role eq OsuRole.NAT else null,
+                        if (filter.roles.contains(OsuRole.OBS)) User::role eq OsuRole.OBS else null,
+                        if (filter.roles.contains(OsuRole.GST)) User::role eq OsuRole.GST else null
                 )))
 
         val findQuery = collection.find(query)

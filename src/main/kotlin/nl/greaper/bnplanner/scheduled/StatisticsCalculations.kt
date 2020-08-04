@@ -47,7 +47,7 @@ class StatisticsCalculations(
                 if (it != 0L) {
                     val user = users.find { user -> user.osuId == it }
 
-                    if (user != null && user.role !== OsuRole.OBS) {
+                    if (user != null && (user.role !== OsuRole.OBS || user.role !== OsuRole.GST)) {
                         userPendingIcons[it] = userPendingIcons[it]?.plus(1) ?: 1
 
                         if (firstNominator && beatmap.nominatedByBNOne) {
