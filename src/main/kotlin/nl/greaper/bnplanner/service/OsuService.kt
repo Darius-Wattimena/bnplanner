@@ -25,23 +25,18 @@ class OsuService(
         val osuMe = response.body?.let { objectMapper.readValue<Me>(it) }
 
         if (osuMe != null) {
-            val databaseUser = try {
+
+            // user doesn't exists so we create a new one
+            val potentionNewUser = try {
                 userDataSource.find(osuMe.id)
             } catch (ex: Exception) {
                 null
-            }
-
-            // user doesn't exists so we create a new one
-            val potentionNewUser = if (databaseUser == null) {
-                User(
-                        osuMe.id,
-                        osuMe.username,
-                        "https://a.ppy.sh/${osuMe.id}",
-                        osuMe.previous_usernames.toMutableList()
-                )
-            } else {
-                databaseUser
-            }
+            } ?: User(
+                    osuMe.id,
+                    osuMe.username,
+                    "https://a.ppy.sh/${osuMe.id}",
+                    osuMe.previous_usernames.toMutableList()
+            )
 
             return try{
                 val user = updateUserInfoIfNeeded(

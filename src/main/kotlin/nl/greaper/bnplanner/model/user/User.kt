@@ -13,7 +13,7 @@ data class User(
         var hasAdminPermissions: Boolean = false,
         var hasHiddenPermissions: Boolean = false,
         var authId: String? = null,
-        var role: OsuRole = OsuRole.OBS,
+        var role: OsuRole = OsuRole.GST,
         val plannerEvents: MutableList<Event> = mutableListOf(),
         var lastToken: String = "",
         var lastTokenExpire: Long = 0
@@ -24,5 +24,6 @@ enum class OsuRole {
         PBN,
         NAT,
         CA,
-        OBS
+        OBS,
+        GST
 }

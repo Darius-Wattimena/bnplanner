@@ -8,6 +8,7 @@ fun OsuRole.getReadableName(): String {
         OsuRole.PBN -> "Probation Beatmap Nominator"
         OsuRole.NAT -> "Nomination Assessment Team"
         OsuRole.CA -> "Retired Nominator"
-        OsuRole.OBS -> "Observer"
+        OsuRole.OBS -> "Other Nominator"
+        OsuRole.GST -> "Guest"
     }
 }
