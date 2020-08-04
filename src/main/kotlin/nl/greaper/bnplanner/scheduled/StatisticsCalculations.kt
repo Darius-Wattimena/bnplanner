@@ -61,27 +61,33 @@ class StatisticsCalculations(
             }
         }
 
+        val nominatorRoles = listOf(OsuRole.BN, OsuRole.PBN, OsuRole.NAT)
+
         val statistics = Statistics(
-                null,
+                _id = null,
 
-                users.size,
-                users.count { user -> listOf(OsuRole.BN, OsuRole.PBN, OsuRole.NAT).any { user.role == it } },
-                users.count { it.role == OsuRole.PBN },
+                totalUser = users.size,
+                totalNominators = users.count { user -> nominatorRoles.any { user.role == it } },
+                totalFullNominators = users.count { it.role == OsuRole.BN },
+                totalProbation = users.count { it.role == OsuRole.PBN },
+                totalNATs = users.count { it.role == OsuRole.NAT },
+                totalOtherNominators = users.count { it.role == OsuRole.OBS },
+                totalGuests = users.count { it.role == OsuRole.GST },
 
-                beatmapsValue.count { it.status == BeatmapStatus.Pending.prio },
-                beatmapsValue.count { it.status == BeatmapStatus.Qualified.prio },
-                beatmapsValue.count { it.status == BeatmapStatus.Bubbled.prio },
-                beatmapsValue.count { it.status == BeatmapStatus.Disqualified.prio },
-                beatmapsValue.count { it.status == BeatmapStatus.Popped.prio },
+                activePending = beatmapsValue.count { it.status == BeatmapStatus.Pending.prio },
+                activeNominated = beatmapsValue.count { it.status == BeatmapStatus.Qualified.prio },
+                activeBubbled = beatmapsValue.count { it.status == BeatmapStatus.Bubbled.prio },
+                activeDisqualified = beatmapsValue.count { it.status == BeatmapStatus.Disqualified.prio },
+                activePopped = beatmapsValue.count { it.status == BeatmapStatus.Popped.prio },
 
-                totalBeatmapsOnPlanner.toInt(),
-                beatmapsValue.count(),
-                beatmapsValue.count { beatmap -> beatmap.nominators.any { it == 0L } },
+                totalBeatmaps = totalBeatmapsOnPlanner.toInt(),
+                totalInProgress = beatmapsValue.count(),
+                totalMissingSecondBN = beatmapsValue.count { beatmap -> beatmap.nominators.any { it == 0L } },
 
-                userPendingIcons,
-                userNominatedIcons,
+                userPendingIcons = userPendingIcons,
+                userNominatedIcons = userNominatedIcons,
 
-                ZonedDateTime.now().toEpochSecond()
+                timestamp = ZonedDateTime.now().toEpochSecond()
         )
 
         dataSource.save(statistics)

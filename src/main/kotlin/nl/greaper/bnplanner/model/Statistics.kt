@@ -8,7 +8,11 @@ data class Statistics(
 
         val totalUser: Int,
         val totalNominators: Int,
+        val totalFullNominators: Int,
         val totalProbation: Int,
+        val totalNATs: Int,
+        val totalOtherNominators: Int,
+        val totalGuests: Int,
 
         val activePending: Int,
         val activeNominated: Int,
