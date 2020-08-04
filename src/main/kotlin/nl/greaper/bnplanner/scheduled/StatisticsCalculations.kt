@@ -18,8 +18,8 @@ class StatisticsCalculations(
         val userDataSource: UserDataSource
 ) {
 
-    // Execute every 3 hours server time
-    @Scheduled(cron = "0 0 */3 * * *")
+    // Execute every hour
+    @Scheduled(cron = "0 0 * * * *")
     fun calculateDailyStatistics() {
         val filter = BeatmapFilter(
                 artist = null,
