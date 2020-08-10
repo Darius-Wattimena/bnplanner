@@ -221,8 +221,6 @@ class BeatmapService(
             return
         }
 
-        databaseBeatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editorId, newStatus))
-
         val now = Instant.now().epochSecond
         var nominatedByBNOne = databaseBeatmap.nominatedByBNOne
         var nominatedByBNTwo = databaseBeatmap.nominatedByBNTwo
@@ -242,9 +240,13 @@ class BeatmapService(
                 nominatedByBNTwo = false
             }
             BeatmapStatus.Ranked.prio -> {
+                databaseBeatmap.osuEvents.add(Events.asBeatmapStatusEvent(editorId, newStatus))
                 dateRanked = now
                 nominatedByBNOne = true
                 nominatedByBNTwo = true
+            }
+            else -> {
+                databaseBeatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editorId, newStatus))
             }
         }
 
