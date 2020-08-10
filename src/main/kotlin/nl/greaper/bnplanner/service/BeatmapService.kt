@@ -70,8 +70,8 @@ class BeatmapService(
                     beatmap.note,
                     beatmap.mapper,
                     beatmap.status,
-                    beatmap.nominators.mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null },
-                    beatmap.interested.mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null },
+                    beatmap.nominators,
+                    beatmap.interested,
                     beatmap.nominatedByBNOne,
                     beatmap.nominatedByBNTwo
             )
