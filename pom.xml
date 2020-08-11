@@ -10,7 +10,7 @@
     </parent>
     <groupId>nl.greaper</groupId>
     <artifactId>bnplanner</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
     <name>bnplanner</name>
     <description>bnplanner</description>
 
