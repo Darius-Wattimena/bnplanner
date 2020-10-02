@@ -46,7 +46,7 @@ class BeatmapController(
         return try {
             val user = osuService.getUserFromToken(token, osuId)
             if (user != null && user.hasEditPermissions) {
-                service.deleteBeatmap(id.toLong())
+                service.deleteBeatmap(id.toLong(), user)
                 true
             } else {
                 false
@@ -88,7 +88,7 @@ class BeatmapController(
         return try {
             val user = osuService.getUserFromToken(token, osuId)
             if (user != null && user.hasEditPermissions) {
-                service.updateBeatmap(user.osuId, id.toLong(), update)
+                service.updateBeatmap(user, id.toLong(), update)
                 true
             } else {
                 false
@@ -109,7 +109,7 @@ class BeatmapController(
             val user = osuService.getUserFromToken(token, osuId)
             if (user != null && user.hasEditPermissions) {
                 return service.addBeatmap(
-                        editorId = user.osuId,
+                        editor = user,
                         beatmapId = newBeatmap.beatmapId.toLong(),
                         token = token
                 )

@@ -1,12 +1,17 @@
 package nl.greaper.bnplanner.service
 
+import nl.greaper.bnplanner.DiscordWebhookClient
 import nl.greaper.bnplanner.dataSource.BeatmapDataSource
 import nl.greaper.bnplanner.dataSource.UserDataSource
 import nl.greaper.bnplanner.exception.BeatmapException
-import nl.greaper.bnplanner.model.*
+import nl.greaper.bnplanner.model.FindResponse
 import nl.greaper.bnplanner.model.beatmap.*
+import nl.greaper.bnplanner.model.discord.EmbedColor
+import nl.greaper.bnplanner.model.discord.EmbedFooter
+import nl.greaper.bnplanner.model.discord.EmbedThumbnail
 import nl.greaper.bnplanner.model.event.Events
 import nl.greaper.bnplanner.model.filter.BeatmapFilter
+import nl.greaper.bnplanner.model.user.User
 import org.springframework.stereotype.Service
 import java.time.Instant
 
@@ -14,9 +19,10 @@ import java.time.Instant
 class BeatmapService(
         val dataSource: BeatmapDataSource,
         val userDataSource: UserDataSource,
-        val osuService: OsuService
+        val osuService: OsuService,
+        val discordWebhookClient: DiscordWebhookClient
 ) {
-    fun addBeatmap(editorId: Long, beatmapId: Long, token: String): Boolean {
+    fun addBeatmap(editor: User, beatmapId: Long, token: String): Boolean {
         if (dataSource.exists(beatmapId)) {
             throw BeatmapException("Beatmapset already registered on the planner")
         }
@@ -25,8 +31,17 @@ class BeatmapService(
         return if (beatmapSet != null) {
             val newBeatmap = Beatmap(beatmapId, beatmapSet.artist, beatmapSet.title, "", beatmapSet.creator, dateAdded = now, dateUpdated = now)
             dataSource.save(newBeatmap)
-            newBeatmap.plannerEvents.add(Events.asBeatmapCreatedEvent(editorId))
+            newBeatmap.plannerEvents.add(Events.asBeatmapCreatedEvent(editor.osuId))
             dataSource.save(newBeatmap)
+            discordWebhookClient.send(
+                    """🌟 **Created**
+                        **[${newBeatmap.artist} - ${newBeatmap.title}](https://osu.ppy.sh/beatmapsets/${newBeatmap.osuId})**
+                        Mapped by [${newBeatmap.mapper}](https://osu.ppy.sh/users/${newBeatmap.mapper})
+                    """.prependIndent(),
+                    EmbedColor.GREEN,
+                    EmbedThumbnail("https://b.ppy.sh/thumb/${newBeatmap.osuId}l.jpg"),
+                    EmbedFooter(editor.osuName, editor.profilePictureUri)
+            )
             true
         } else {
             false
@@ -37,8 +52,22 @@ class BeatmapService(
         return dataSource.find(beatmapId)
     }
 
-    fun deleteBeatmap(beatmapId: Long): Boolean {
-        return dataSource.deleteById(beatmapId)
+    fun deleteBeatmap(beatmapId: Long, editor: User): Boolean {
+        val beatmap = dataSource.find(beatmapId)
+        val result = dataSource.deleteById(beatmapId)
+
+        discordWebhookClient.send(
+                """🐒 **Deleted**
+                    **[${beatmap.artist} - ${beatmap.title}](https://osu.ppy.sh/beatmapsets/${beatmap.osuId})**
+                    Mapped by [${beatmap.mapper}](https://osu.ppy.sh/users/${beatmap.mapper})
+                """.prependIndent(),
+                EmbedColor.RED,
+                EmbedThumbnail("https://b.ppy.sh/thumb/${beatmap.osuId}l.jpg"),
+                EmbedFooter(editor.osuName, editor.profilePictureUri),
+                confidential = true
+        )
+
+        return result
     }
 
     fun findDetailedBeatmap(beatmapId: Long): DetailedBeatmap {
@@ -86,7 +115,7 @@ class BeatmapService(
     }
 
     //TODO write unit test
-    fun updateBeatmap(editorId: Long, beatmapId: Long, updated: UpdatedBeatmap) {
+    fun updateBeatmap(editor: User, beatmapId: Long, updated: UpdatedBeatmap) {
         val databaseBeatmap = dataSource.find(beatmapId)
         val oldArtist = databaseBeatmap.artist
         val oldTitle = databaseBeatmap.title
@@ -108,27 +137,19 @@ class BeatmapService(
 
         if (oldArtist != updatedBeatmap.artist || oldTitle != updatedBeatmap.title ||
                 oldMapper != updatedBeatmap.mapper) {
-            updatedBeatmap.plannerEvents.add(Events.asBeatmapMetadataModifiedEvent(editorId))
+            updatedBeatmap.plannerEvents.add(Events.asBeatmapMetadataModifiedEvent(editor.osuId))
         }
 
         if (oldNote != updatedBeatmap.note) {
-            updatedBeatmap.plannerEvents.add(Events.asBeatmapNoteModifiedEvent(editorId))
+            updatedBeatmap.plannerEvents.add(Events.asBeatmapNoteModifiedEvent(editor.osuId))
         }
 
-        if (!oldNominators.containsAll(updatedBeatmap.nominators)) {
-            val addedNominators = updatedBeatmap.nominators.filter { !oldNominators.contains(it) }
-                    .mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null }
-            val removedNominators = oldNominators.filter { !updatedBeatmap.nominators.contains(it) }
-                    .mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null }
+        val addedNominators = updatedBeatmap.nominators.filter { !oldNominators.contains(it) }
+                .mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null }
+        val removedNominators = oldNominators.filter { !updatedBeatmap.nominators.contains(it) }
+                .mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null }
 
-            removedNominators.forEach {
-                updatedBeatmap.plannerEvents.add(Events.asBeatmapNominatorRemovedEvent(editorId, it))
-            }
-
-            addedNominators.forEach {
-                updatedBeatmap.plannerEvents.add(Events.asBeatmapNominatorAddedEvent(editorId, it))
-            }
-        }
+        logNominatorChanges(addedNominators, removedNominators, updatedBeatmap, editor)
 
         val now = Instant.now().epochSecond
         var nominatedByBNOne = updatedBeatmap.nominatedByBNOne
@@ -148,41 +169,16 @@ class BeatmapService(
             }
         }
 
-        /**
-         * Updated the beatmap status for users that are lazy
-         * - To Pending when no nominator nominated the set and is not popped or disqualified
-         * - To Bubbled when only 1 nominator nominated the set
-         * - To Qualified when 2 nominators nominated the set
-         */
-        val newStatus = when(nominatedByBNOne to nominatedByBNTwo) {
-            true to true -> {
-                if (updatedBeatmap.status != BeatmapStatus.Ranked.prio) {
-                    BeatmapStatus.Qualified.prio
-                } else {
-                    updatedBeatmap.status
-                }
-            }
-            true to false, false to true -> {
-                BeatmapStatus.Bubbled.prio
-            }
-            false to false -> {
-                if (updatedBeatmap.status != BeatmapStatus.Popped.prio && updatedBeatmap.status != BeatmapStatus.Disqualified.prio) {
-                    BeatmapStatus.Pending.prio
-                } else{
-                    updatedBeatmap.status
-                }
-            }
-            else -> updatedBeatmap.status
-        }
+        val newStatus = determineNewStatus(nominatedByBNOne, nominatedByBNTwo, updatedBeatmap)
 
         // Now check if the status got updated so we can update the rank date and add an event
         val dateRanked = if (oldStatus != newStatus) {
             when (newStatus) {
                 BeatmapStatus.Pending.prio, BeatmapStatus.Graved.prio -> {
-                    updatedBeatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editorId, newStatus))
+                    updatedBeatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editor.osuId, newStatus))
                 }
                 else -> {
-                    updatedBeatmap.osuEvents.add(Events.asBeatmapStatusEvent(editorId, newStatus))
+                    updatedBeatmap.osuEvents.add(Events.asBeatmapStatusEvent(editor.osuId, newStatus))
                 }
             }
 
@@ -210,6 +206,79 @@ class BeatmapService(
                 dateUpdated = now,
                 dateRanked = dateRanked
         ))
+    }
+
+    /**
+     * Updated the beatmap status for users that are lazy
+     * - To Pending when no nominator nominated the set and is not popped or disqualified
+     * - To Bubbled when only 1 nominator nominated the set
+     * - To Qualified when 2 nominators nominated the set
+     */
+    private fun determineNewStatus(nominatedByBNOne: Boolean, nominatedByBNTwo: Boolean, updatedBeatmap: Beatmap): Long {
+        return when(nominatedByBNOne to nominatedByBNTwo) {
+            true to true -> {
+                if (updatedBeatmap.status != BeatmapStatus.Ranked.prio) {
+                    BeatmapStatus.Qualified.prio
+                } else {
+                    updatedBeatmap.status
+                }
+            }
+            true to false, false to true -> {
+                BeatmapStatus.Bubbled.prio
+            }
+            false to false -> {
+                if (updatedBeatmap.status != BeatmapStatus.Popped.prio && updatedBeatmap.status != BeatmapStatus.Disqualified.prio) {
+                    BeatmapStatus.Pending.prio
+                } else{
+                    updatedBeatmap.status
+                }
+            }
+            else -> updatedBeatmap.status
+        }
+    }
+
+    /**
+     * Log nominator changes to the planner events and also push a message to discord
+     */
+    private fun logNominatorChanges(addedNominators: List<User>, removedNominators: List<User>, updatedBeatmap: Beatmap, editor: User) {
+        var nominatorChangesText = ""
+        var firstItem = true
+
+        addedNominators.forEach {
+            updatedBeatmap.plannerEvents.add(Events.asBeatmapNominatorAddedEvent(editor.osuId, it))
+            if (firstItem) {
+                firstItem = false
+            } else {
+                nominatorChangesText += "\n"
+            }
+
+            //✅ 💡
+            nominatorChangesText += "✅ **Added [${it.osuName}](https://osu.ppy.sh/users/${it.osuId})**"
+        }
+
+        removedNominators.forEach {
+            updatedBeatmap.plannerEvents.add(Events.asBeatmapNominatorRemovedEvent(editor.osuId, it))
+            if (firstItem) {
+                firstItem = false
+            } else {
+                nominatorChangesText += "\n"
+            }
+
+            // ❎ ❌ 💥
+            nominatorChangesText += "❌ **Removed [${it.osuName}](https://osu.ppy.sh/users/${it.osuId})**"
+        }
+
+        if (removedNominators.isNotEmpty() || addedNominators.isNotEmpty()) {
+            discordWebhookClient.send(
+                    """$nominatorChangesText
+                            **[${updatedBeatmap.artist} - ${updatedBeatmap.title}](https://osu.ppy.sh/beatmapsets/${updatedBeatmap.osuId})**
+                            Mapped by [${updatedBeatmap.mapper}](https://osu.ppy.sh/users/${updatedBeatmap.mapper})
+                        """.prependIndent(),
+                    EmbedColor.BLUE,
+                    EmbedThumbnail("https://b.ppy.sh/thumb/${updatedBeatmap.osuId}l.jpg"),
+                    EmbedFooter(editor.osuName, editor.profilePictureUri)
+            )
+        }
     }
 
     fun setBeatmapStatus(editorId: Long, beatmapId: Long, statusUpdate: UpdatedBeatmapStatus) {

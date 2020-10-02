@@ -39,4 +39,9 @@ class KonfigConfiguration {
         val methods by listType(stringType)
         val headers by listType(stringType)
     }
+
+    object discord : PropertyGroup() {
+        val webhook by stringType
+        val moddingwebhook by stringType
+    }
 }
