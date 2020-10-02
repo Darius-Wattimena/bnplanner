@@ -46,8 +46,10 @@ class DiscordWebhookClient(
             // Public catch mapping hub feed with only the most informative messages
             val moddingServerWebhookUrl = config[discord.moddingwebhook]
 
-            if (moddingServerWebhookUrl.isNotBlank()) {
-                rest.exchange(moddingServerWebhookUrl, HttpMethod.POST, request, String::class.java)
+            moddingServerWebhookUrl.forEach {
+                if (it.isNotBlank()) {
+                    rest.exchange(it, HttpMethod.POST, request, String::class.java)
+                }
             }
         }
 

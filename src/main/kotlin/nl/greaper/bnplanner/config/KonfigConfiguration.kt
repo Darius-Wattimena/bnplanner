@@ -42,6 +42,6 @@ class KonfigConfiguration {
 
     object discord : PropertyGroup() {
         val webhook by stringType
-        val moddingwebhook by stringType
+        val moddingwebhook by listType(stringType)
     }
 }
