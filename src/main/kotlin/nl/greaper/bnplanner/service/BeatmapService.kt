@@ -12,6 +12,7 @@ import nl.greaper.bnplanner.model.discord.EmbedThumbnail
 import nl.greaper.bnplanner.model.event.Events
 import nl.greaper.bnplanner.model.filter.BeatmapFilter
 import nl.greaper.bnplanner.model.user.User
+import nl.greaper.bnplanner.util.getReadableName
 import org.springframework.stereotype.Service
 import java.time.Instant
 
@@ -22,6 +23,20 @@ class BeatmapService(
         val osuService: OsuService,
         val discordWebhookClient: DiscordWebhookClient
 ) {
+    private val UPDATED_STATUS_ICON = "\uD83D\uDCAD" // 💭
+    private val RANKED_STATUS_ICON = "\uD83D\uDC96" // 💖
+    private val NOMINATED_STATUS_ICON = "❤"
+    private val BUBBLED_STATUS_ICON = "\uD83D\uDCAD" // 💭
+    private val DISQUALIFIED_STATUS_ICON = "\uD83D\uDC94" // 💔
+    private val POPPED_STATUS_ICON = "\uD83D\uDDEF" // 🗯️
+    private val GRAVED_STATUS_ICON = "\uD83D\uDDD1" // 🗑️
+
+    private val CREATED_BEATMAP_ICON = "\uD83C\uDF1F" // 🌟
+    private val DELETED_BEATMAP_ICON = "\uD83D\uDC12" // 🐒
+    private val ADDED_NOMINATOR_ICON = "✅"
+    private val REMOVED_NOMINATOR_ICON = "❌"
+
+
     fun addBeatmap(editor: User, beatmapId: Long, token: String): Boolean {
         if (dataSource.exists(beatmapId)) {
             throw BeatmapException("Beatmapset already registered on the planner")
@@ -34,7 +49,7 @@ class BeatmapService(
             newBeatmap.plannerEvents.add(Events.asBeatmapCreatedEvent(editor.osuId))
             dataSource.save(newBeatmap)
             discordWebhookClient.send(
-                    """🌟 **Created**
+                    """$CREATED_BEATMAP_ICON **Created**
                         **[${newBeatmap.artist} - ${newBeatmap.title}](https://osu.ppy.sh/beatmapsets/${newBeatmap.osuId})**
                         Mapped by [${newBeatmap.mapper}](https://osu.ppy.sh/users/${newBeatmap.mapper})
                     """.prependIndent(),
@@ -57,7 +72,7 @@ class BeatmapService(
         val result = dataSource.deleteById(beatmapId)
 
         discordWebhookClient.send(
-                """🐒 **Deleted**
+                """$DELETED_BEATMAP_ICON **Deleted**
                     **[${beatmap.artist} - ${beatmap.title}](https://osu.ppy.sh/beatmapsets/${beatmap.osuId})**
                     Mapped by [${beatmap.mapper}](https://osu.ppy.sh/users/${beatmap.mapper})
                 """.prependIndent(),
@@ -170,9 +185,42 @@ class BeatmapService(
         }
 
         val newStatus = determineNewStatus(nominatedByBNOne, nominatedByBNTwo, updatedBeatmap)
+        logNewStatus(oldStatus, newStatus, updatedBeatmap, editor)
 
-        // Now check if the status got updated so we can update the rank date and add an event
-        val dateRanked = if (oldStatus != newStatus) {
+        val dateRanked = determineDateRanked(oldStatus, newStatus, updatedBeatmap, editor, now)
+
+        dataSource.save(updatedBeatmap.copy(
+                nominatedByBNOne = nominatedByBNOne,
+                nominatedByBNTwo = nominatedByBNTwo,
+                status = newStatus,
+                dateUpdated = now,
+                dateRanked = dateRanked
+        ))
+    }
+
+    private fun logNewStatus(oldStatus: Long, newStatus: Long, updatedBeatmap: Beatmap, editor: User) {
+        if (oldStatus == newStatus) return
+        else {
+            val messageIcon = getMessageIcon(newStatus)
+
+            discordWebhookClient.send(
+                    """**$messageIcon Updated status to ${BeatmapStatus.fromPrio(newStatus).getReadableName()}**
+                        **[${updatedBeatmap.artist} - ${updatedBeatmap.title}](https://osu.ppy.sh/beatmapsets/${updatedBeatmap.osuId})**
+                        Mapped by [${updatedBeatmap.mapper}](https://osu.ppy.sh/users/${updatedBeatmap.mapper})
+                    """.prependIndent(),
+                    EmbedColor.BLUE,
+                    EmbedThumbnail("https://b.ppy.sh/thumb/${updatedBeatmap.osuId}l.jpg"),
+                    EmbedFooter(editor.osuName, editor.profilePictureUri),
+                    confidential = true
+            )
+        }
+    }
+
+    /**
+     * Check if the status got updated so we can update the rank date and add an event
+     */
+    private fun determineDateRanked(oldStatus: Long, newStatus: Long, updatedBeatmap: Beatmap, editor: User, now: Long): Long {
+        return if (oldStatus != newStatus) {
             when (newStatus) {
                 BeatmapStatus.Pending.prio, BeatmapStatus.Graved.prio -> {
                     updatedBeatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editor.osuId, newStatus))
@@ -198,14 +246,6 @@ class BeatmapService(
         } else {
             updatedBeatmap.dateRanked
         }
-
-        dataSource.save(updatedBeatmap.copy(
-                nominatedByBNOne = nominatedByBNOne,
-                nominatedByBNTwo = nominatedByBNTwo,
-                status = newStatus,
-                dateUpdated = now,
-                dateRanked = dateRanked
-        ))
     }
 
     /**
@@ -252,8 +292,7 @@ class BeatmapService(
                 nominatorChangesText += "\n"
             }
 
-            //✅ 💡
-            nominatorChangesText += "✅ **Added [${it.osuName}](https://osu.ppy.sh/users/${it.osuId})**"
+            nominatorChangesText += "$ADDED_NOMINATOR_ICON **Added [${it.osuName}](https://osu.ppy.sh/users/${it.osuId})**"
         }
 
         removedNominators.forEach {
@@ -264,16 +303,15 @@ class BeatmapService(
                 nominatorChangesText += "\n"
             }
 
-            // ❎ ❌ 💥
-            nominatorChangesText += "❌ **Removed [${it.osuName}](https://osu.ppy.sh/users/${it.osuId})**"
+            nominatorChangesText += "$REMOVED_NOMINATOR_ICON **Removed [${it.osuName}](https://osu.ppy.sh/users/${it.osuId})**"
         }
 
         if (removedNominators.isNotEmpty() || addedNominators.isNotEmpty()) {
             discordWebhookClient.send(
                     """$nominatorChangesText
-                            **[${updatedBeatmap.artist} - ${updatedBeatmap.title}](https://osu.ppy.sh/beatmapsets/${updatedBeatmap.osuId})**
-                            Mapped by [${updatedBeatmap.mapper}](https://osu.ppy.sh/users/${updatedBeatmap.mapper})
-                        """.prependIndent(),
+                        **[${updatedBeatmap.artist} - ${updatedBeatmap.title}](https://osu.ppy.sh/beatmapsets/${updatedBeatmap.osuId})**
+                        Mapped by [${updatedBeatmap.mapper}](https://osu.ppy.sh/users/${updatedBeatmap.mapper})
+                    """.prependIndent(),
                     EmbedColor.BLUE,
                     EmbedThumbnail("https://b.ppy.sh/thumb/${updatedBeatmap.osuId}l.jpg"),
                     EmbedFooter(editor.osuName, editor.profilePictureUri)
@@ -281,7 +319,7 @@ class BeatmapService(
         }
     }
 
-    fun setBeatmapStatus(editorId: Long, beatmapId: Long, statusUpdate: UpdatedBeatmapStatus) {
+    fun setBeatmapStatus(editor: User, beatmapId: Long, statusUpdate: UpdatedBeatmapStatus) {
         val databaseBeatmap = dataSource.find(beatmapId)
         val newStatus = statusUpdate.status
 
@@ -300,24 +338,37 @@ class BeatmapService(
                 val reason = statusUpdate.reason ?: ""
 
                 if (newStatus == BeatmapStatus.Popped.prio) {
-                    databaseBeatmap.osuEvents.add(Events.asBeatmapPoppedEvent(editorId, reason))
+                    databaseBeatmap.osuEvents.add(Events.asBeatmapPoppedEvent(editor.osuId, reason))
                 } else {
-                    databaseBeatmap.osuEvents.add(Events.asBeatmapDisqualifiedEvent(editorId, reason))
+                    databaseBeatmap.osuEvents.add(Events.asBeatmapDisqualifiedEvent(editor.osuId, reason))
                 }
 
                 nominatedByBNOne = false
                 nominatedByBNTwo = false
             }
             BeatmapStatus.Ranked.prio -> {
-                databaseBeatmap.osuEvents.add(Events.asBeatmapStatusEvent(editorId, newStatus))
+                databaseBeatmap.osuEvents.add(Events.asBeatmapStatusEvent(editor.osuId, newStatus))
                 dateRanked = now
                 nominatedByBNOne = true
                 nominatedByBNTwo = true
             }
             else -> {
-                databaseBeatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editorId, newStatus))
+                databaseBeatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editor.osuId, newStatus))
             }
         }
+
+        val messageIcon = getMessageIcon(newStatus)
+
+        discordWebhookClient.send(
+                """**$messageIcon Updated status to ${BeatmapStatus.fromPrio(newStatus).getReadableName()}**
+                            **[${databaseBeatmap.artist} - ${databaseBeatmap.title}](https://osu.ppy.sh/beatmapsets/${databaseBeatmap.osuId})**
+                            Mapped by [${databaseBeatmap.mapper}](https://osu.ppy.sh/users/${databaseBeatmap.mapper})
+                        """.prependIndent(),
+                EmbedColor.ORANGE,
+                EmbedThumbnail("https://b.ppy.sh/thumb/${databaseBeatmap.osuId}l.jpg"),
+                EmbedFooter(editor.osuName, editor.profilePictureUri),
+                confidential = true
+        )
 
         dataSource.save(databaseBeatmap.copy(
                 nominatedByBNOne = nominatedByBNOne,
@@ -326,5 +377,17 @@ class BeatmapService(
                 dateRanked = dateRanked,
                 status = newStatus
         ))
+    }
+
+    private fun getMessageIcon(status: Long): String {
+        return when (BeatmapStatus.fromPrio(status)) {
+            BeatmapStatus.Qualified -> NOMINATED_STATUS_ICON
+            BeatmapStatus.Bubbled -> BUBBLED_STATUS_ICON
+            BeatmapStatus.Disqualified -> DISQUALIFIED_STATUS_ICON
+            BeatmapStatus.Popped -> POPPED_STATUS_ICON
+            BeatmapStatus.Pending -> UPDATED_STATUS_ICON
+            BeatmapStatus.Ranked -> RANKED_STATUS_ICON
+            BeatmapStatus.Graved -> GRAVED_STATUS_ICON
+        }
     }
 }

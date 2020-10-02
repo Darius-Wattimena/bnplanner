@@ -67,7 +67,7 @@ class BeatmapController(
         return try {
             val user = osuService.getUserFromToken(token, osuId)
             if (user != null && user.hasEditPermissions) {
-                service.setBeatmapStatus(osuId, id.toLong(), status)
+                service.setBeatmapStatus(user, id.toLong(), status)
                 true
             } else {
                 false
