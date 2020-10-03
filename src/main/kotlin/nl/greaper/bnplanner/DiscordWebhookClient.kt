@@ -24,7 +24,7 @@ class DiscordWebhookClient(
             thumbnail: EmbedThumbnail,
             footer: EmbedFooter,
             confidential: Boolean = false
-    ): ResponseEntity<String> {
+    ) {
         return send(EmbedMessage(
                 description,
                 Instant.now().toString(),
@@ -34,7 +34,7 @@ class DiscordWebhookClient(
         ), confidential)
     }
 
-    private fun send(embedMessage: EmbedMessage, confidential: Boolean) : ResponseEntity<String> {
+    private fun send(embedMessage: EmbedMessage, confidential: Boolean) {
         headers.contentType = MediaType.APPLICATION_JSON
         // Private discord server with all messages
         val webhookUrl = config[discord.webhook]
@@ -53,6 +53,8 @@ class DiscordWebhookClient(
             }
         }
 
-        return rest.exchange(webhookUrl, HttpMethod.POST, request, String::class.java)
+        if (webhookUrl.isNotBlank()) {
+            rest.exchange(webhookUrl, HttpMethod.POST, request, String::class.java)
+        }
     }
 }

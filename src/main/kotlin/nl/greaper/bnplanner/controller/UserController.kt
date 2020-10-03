@@ -28,7 +28,7 @@ class UserController(
     }
 
     @GetMapping("/{id}")
-    fun findUser(@PathVariable("id") osuId: String): User? {
+    fun findUser(@PathVariable("id") osuId: String): FoundUser? {
         return try {
             service.findUser(osuId.toLong())
         } catch (ex: Exception) {
@@ -48,7 +48,7 @@ class UserController(
     }
 
     @GetMapping("/findAll")
-    fun findAllUsers(): List<User> {
+    fun findAllUsers(): List<FoundUser> {
         return try {
             return service.findUsers()
         } catch (ex: Exception) {
@@ -56,7 +56,6 @@ class UserController(
             emptyList()
         }
     }
-
 
     @GetMapping("/searchByFilter")
     fun findUsers(

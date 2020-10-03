@@ -32,12 +32,15 @@ class UserService(
         )
     }
 
-    fun findUser(osuId: Long): User {
-        return dataSource.find(osuId)
+    fun findUser(osuId: Long): FoundUser {
+        val user = dataSource.find(osuId)
+        return FoundUser(user.osuId, user.osuName, user.aliases, user.profilePictureUri, user.hasEditPermissions, user.hasAdminPermissions, user.role)
     }
 
-    fun findUsers(): List<User> {
-        return dataSource.findAll().sortedWith(compareBy({it.role}, {it.osuName}))
+    fun findUsers(): List<FoundUser> {
+        return dataSource.findAll().sortedWith(compareBy({it.role}, {it.osuName})).map {
+            FoundUser(it.osuId, it.osuName, it.aliases, it.profilePictureUri, it.hasEditPermissions, it.hasAdminPermissions, it.role)
+        }
     }
 
     fun findUsers(userFilter: UserFilter): FindResponse<FoundUser> {
