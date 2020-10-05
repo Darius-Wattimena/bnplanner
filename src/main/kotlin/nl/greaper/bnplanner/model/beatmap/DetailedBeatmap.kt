@@ -14,5 +14,6 @@ data class DetailedBeatmap (
         val plannerEvents: List<Event>,
         val osuEvents: List<Event>,
         val nominatedByBNOne: Boolean = false,
-        val nominatedByBNTwo: Boolean = false
+        val nominatedByBNTwo: Boolean = false,
+        val dateUpdated: Long
 )

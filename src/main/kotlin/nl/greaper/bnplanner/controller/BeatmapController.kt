@@ -37,6 +37,26 @@ class BeatmapController(
         }
     }
 
+    @GetMapping("/{id}/refreshMetadata")
+    fun refreshMetadata(
+            @PathVariable("id") id: String,
+            @RequestHeader(name = "Osu-Id") osuId: Long,
+            @RequestHeader(name = "Authorization") token: String
+    ): Boolean {
+        return try {
+            val user = osuService.getUserFromToken(token, osuId)
+            if (user != null && user.hasEditPermissions) {
+                service.refreshMetadata(user, id.toLong(), token)
+                true
+            } else {
+                false
+            }
+        } catch (ex: Exception) {
+            log.error("Error while executing Request", ex)
+            false
+        }
+    }
+
     @DeleteMapping("/{id}/delete")
     fun deleteBeatmap(
             @PathVariable("id") id: String,

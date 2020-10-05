@@ -85,6 +85,23 @@ class BeatmapService(
         return result
     }
 
+    fun refreshMetadata(editor: User, beatmapId: Long, token: String) {
+        val beatmap = dataSource.find(beatmapId)
+        val beatmapSet = osuService.findBeatmapSetInfo(token, beatmapId)
+
+        if (beatmapSet != null) {
+            val updatedBeatmap = beatmap.copy(
+                    mapper = beatmapSet.creator,
+                    artist = beatmapSet.artist,
+                    title = beatmapSet.title
+            )
+
+            dataSource.save(updatedBeatmap)
+        } else {
+            throw BeatmapException("Could not find the beatmap on the osu! api")
+        }
+    }
+
     fun findDetailedBeatmap(beatmapId: Long): DetailedBeatmap {
         val beatmap = dataSource.find(beatmapId)
 
@@ -100,7 +117,8 @@ class BeatmapService(
                 beatmap.plannerEvents,
                 beatmap.osuEvents,
                 beatmap.nominatedByBNOne,
-                beatmap.nominatedByBNTwo
+                beatmap.nominatedByBNTwo,
+                beatmap.dateUpdated
         )
     }
 
