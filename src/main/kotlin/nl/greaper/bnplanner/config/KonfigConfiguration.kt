@@ -23,6 +23,13 @@ class KonfigConfiguration {
         return properties
     }
 
+    object osu : PropertyGroup() {
+        val clientId by stringType
+        val clientSecret by stringType
+        val redirectUri by stringType
+        val proxy by stringType
+    }
+
     object mongodb : PropertyGroup() {
         val host by stringType
         val username by stringType
