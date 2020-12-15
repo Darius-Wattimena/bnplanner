@@ -30,6 +30,7 @@ class BeatmapService(
     private val DISQUALIFIED_STATUS_ICON = "\uD83D\uDC94" // 💔
     private val POPPED_STATUS_ICON = "\uD83D\uDDEF" // 🗯️
     private val GRAVED_STATUS_ICON = "\uD83D\uDDD1" // 🗑️
+    private val UNFINISHED_STATUS_ICON = "\uD83D\uDD28" // 🔨
 
     private val CREATED_BEATMAP_ICON = "\uD83C\uDF1F" // 🌟
     private val DELETED_BEATMAP_ICON = "\uD83D\uDC12" // 🐒
@@ -118,7 +119,8 @@ class BeatmapService(
                 beatmap.osuEvents,
                 beatmap.nominatedByBNOne,
                 beatmap.nominatedByBNTwo,
-                beatmap.dateUpdated
+                beatmap.dateUpdated,
+                beatmap.unfinished
         )
     }
 
@@ -165,7 +167,8 @@ class BeatmapService(
                 note = updated.note ?: databaseBeatmap.note,
                 nominators = updated.nominators.map { it ?: 0 },
                 nominatedByBNOne = updated.nominatedByBNOne,
-                nominatedByBNTwo = updated.nominatedByBNTwo
+                nominatedByBNTwo = updated.nominatedByBNTwo,
+                unfinished = updated.unfinished
         )
 
         if (oldArtist != updatedBeatmap.artist || oldTitle != updatedBeatmap.title ||
@@ -240,7 +243,7 @@ class BeatmapService(
     private fun determineDateRanked(oldStatus: Long, newStatus: Long, updatedBeatmap: Beatmap, editor: User, now: Long): Long {
         return if (oldStatus != newStatus) {
             when (newStatus) {
-                BeatmapStatus.Pending.prio, BeatmapStatus.Graved.prio -> {
+                BeatmapStatus.Pending.prio, BeatmapStatus.Unfinished.prio, BeatmapStatus.Graved.prio -> {
                     updatedBeatmap.plannerEvents.add(Events.asBeatmapStatusEvent(editor.osuId, newStatus))
                 }
                 else -> {
@@ -286,7 +289,7 @@ class BeatmapService(
             }
             false to false -> {
                 if (updatedBeatmap.status != BeatmapStatus.Popped.prio && updatedBeatmap.status != BeatmapStatus.Disqualified.prio) {
-                    BeatmapStatus.Pending.prio
+                    if (updatedBeatmap.unfinished) BeatmapStatus.Unfinished.prio else BeatmapStatus.Pending.prio
                 } else{
                     updatedBeatmap.status
                 }
@@ -406,6 +409,7 @@ class BeatmapService(
             BeatmapStatus.Pending -> UPDATED_STATUS_ICON
             BeatmapStatus.Ranked -> RANKED_STATUS_ICON
             BeatmapStatus.Graved -> GRAVED_STATUS_ICON
+            BeatmapStatus.Unfinished -> UNFINISHED_STATUS_ICON
         }
     }
 }

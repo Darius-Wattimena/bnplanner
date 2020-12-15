@@ -10,7 +10,7 @@ data class Beatmap(
         val title: String,
         val note: String,
         val mapper: String,
-        val status: Long = BeatmapStatus.Pending.prio,
+        val status: Long = BeatmapStatus.Unfinished.prio,
         val nominators: List<Long> = listOf(0, 0),
         val interested: MutableList<Long> = mutableListOf(),
         val plannerEvents: MutableList<Event> = mutableListOf(),
@@ -19,7 +19,8 @@ data class Beatmap(
         val dateUpdated: Long = 0,
         val dateRanked: Long = 0,
         val nominatedByBNOne: Boolean = false,
-        val nominatedByBNTwo: Boolean = false
+        val nominatedByBNTwo: Boolean = false,
+        val unfinished: Boolean = false
 )
 
 enum class BeatmapStatus(val prio: Long) {
@@ -29,7 +30,8 @@ enum class BeatmapStatus(val prio: Long) {
     Popped(4),
     Pending(5),
     Ranked(6),
-    Graved(7);
+    Graved(7),
+    Unfinished(8);
 
     companion object {
         fun fromPrio(prio: Long): BeatmapStatus
@@ -42,6 +44,7 @@ enum class BeatmapStatus(val prio: Long) {
                 Popped.prio -> Popped
                 Ranked.prio -> Ranked
                 Graved.prio -> Graved
+                Unfinished.prio -> Unfinished
                 else -> Pending
             }
         }

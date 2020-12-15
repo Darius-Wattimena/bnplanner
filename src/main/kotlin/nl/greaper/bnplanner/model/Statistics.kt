@@ -15,6 +15,7 @@ data class Statistics(
         val totalGuests: Int,
 
         val activePending: Int,
+        val activeUnfinished: Int,
         val activeNominated: Int,
         val activeBubbled: Int,
         val activeDisqualified: Int,

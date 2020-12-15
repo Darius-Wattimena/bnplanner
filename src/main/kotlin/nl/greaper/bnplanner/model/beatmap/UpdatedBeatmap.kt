@@ -8,5 +8,6 @@ data class UpdatedBeatmap(
         val note: String?,
         val nominators: List<Long?> = emptyList(),
         val nominatedByBNOne: Boolean = false,
-        val nominatedByBNTwo: Boolean = false
+        val nominatedByBNTwo: Boolean = false,
+        val unfinished: Boolean = false
 )

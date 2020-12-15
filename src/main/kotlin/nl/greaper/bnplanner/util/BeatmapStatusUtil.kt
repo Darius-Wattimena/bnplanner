@@ -11,5 +11,6 @@ fun BeatmapStatus.getReadableName(): String {
         BeatmapStatus.Disqualified -> "Disqualified"
         BeatmapStatus.Ranked -> "Ranked"
         BeatmapStatus.Graved -> "Graved"
+        BeatmapStatus.Unfinished -> "Unfinished"
     }
 }

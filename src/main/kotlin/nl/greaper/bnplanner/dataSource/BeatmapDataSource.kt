@@ -55,6 +55,7 @@ class BeatmapDataSource(database: MongoDatabase) {
                 )),
                 or(listOfNotNull(
                         if (filter.status.contains(BeatmapStatus.Pending.prio)) Beatmap::status eq BeatmapStatus.Pending.prio else null,
+                        if (filter.status.contains(BeatmapStatus.Unfinished.prio)) Beatmap::status eq BeatmapStatus.Unfinished.prio else null,
                         if (filter.status.contains(BeatmapStatus.Bubbled.prio)) Beatmap::status eq BeatmapStatus.Bubbled.prio else null,
                         if (filter.status.contains(BeatmapStatus.Qualified.prio)) Beatmap::status eq BeatmapStatus.Qualified.prio else null,
                         if (filter.status.contains(BeatmapStatus.Ranked.prio)) Beatmap::status eq BeatmapStatus.Ranked.prio else null,

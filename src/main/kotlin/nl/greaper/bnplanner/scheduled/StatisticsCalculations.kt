@@ -75,6 +75,7 @@ class StatisticsCalculations(
                 totalGuests = users.count { it.role == OsuRole.GST },
 
                 activePending = beatmapsValue.count { it.status == BeatmapStatus.Pending.prio },
+                activeUnfinished = beatmapsValue.count { it.status == BeatmapStatus.Unfinished.prio },
                 activeNominated = beatmapsValue.count { it.status == BeatmapStatus.Qualified.prio },
                 activeBubbled = beatmapsValue.count { it.status == BeatmapStatus.Bubbled.prio },
                 activeDisqualified = beatmapsValue.count { it.status == BeatmapStatus.Disqualified.prio },
