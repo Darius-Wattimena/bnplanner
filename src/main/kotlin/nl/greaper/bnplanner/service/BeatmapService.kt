@@ -74,7 +74,7 @@ class BeatmapService(
         discordWebhookClient.send(
                 """$DELETED_BEATMAP_ICON **Deleted**
                     **[${beatmap.artist} - ${beatmap.title}](https://osu.ppy.sh/beatmapsets/${beatmap.osuId})**
-                    Mapped by [${beatmap.mapper}](https://osu.ppy.sh/users/${beatmap.mapper})
+                    Mapped by [${beatmap.mapper}](https://osu.ppy.sh/users/${beatmap.mapper.replace(" ", "%20")})
                 """.prependIndent(),
                 EmbedColor.RED,
                 EmbedThumbnail("https://b.ppy.sh/thumb/${beatmap.osuId}l.jpg"),
