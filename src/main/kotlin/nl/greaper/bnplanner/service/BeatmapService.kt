@@ -51,7 +51,7 @@ class BeatmapService(
             discordWebhookClient.send(
                     """$CREATED_BEATMAP_ICON **Created**
                         **[${newBeatmap.artist} - ${newBeatmap.title}](https://osu.ppy.sh/beatmapsets/${newBeatmap.osuId})**
-                        Mapped by [${newBeatmap.mapper}](https://osu.ppy.sh/users/${newBeatmap.mapper})
+                        Mapped by [${newBeatmap.mapper}](https://osu.ppy.sh/users/${newBeatmap.mapper.replace(" ", "%20")})
                     """.prependIndent(),
                     EmbedColor.GREEN,
                     EmbedThumbnail("https://b.ppy.sh/thumb/${newBeatmap.osuId}l.jpg"),
@@ -224,7 +224,7 @@ class BeatmapService(
             discordWebhookClient.send(
                     """**$messageIcon Updated status to ${BeatmapStatus.fromPrio(newStatus).getReadableName()}**
                         **[${updatedBeatmap.artist} - ${updatedBeatmap.title}](https://osu.ppy.sh/beatmapsets/${updatedBeatmap.osuId})**
-                        Mapped by [${updatedBeatmap.mapper}](https://osu.ppy.sh/users/${updatedBeatmap.mapper})
+                        Mapped by [${updatedBeatmap.mapper}](https://osu.ppy.sh/users/${updatedBeatmap.mapper.replace(" ", "%20")})
                     """.prependIndent(),
                     EmbedColor.BLUE,
                     EmbedThumbnail("https://b.ppy.sh/thumb/${updatedBeatmap.osuId}l.jpg"),
@@ -328,7 +328,7 @@ class BeatmapService(
             discordWebhookClient.send(
                     """$nominatorChangesText
                         **[${updatedBeatmap.artist} - ${updatedBeatmap.title}](https://osu.ppy.sh/beatmapsets/${updatedBeatmap.osuId})**
-                        Mapped by [${updatedBeatmap.mapper}](https://osu.ppy.sh/users/${updatedBeatmap.mapper})
+                        Mapped by [${updatedBeatmap.mapper}](https://osu.ppy.sh/users/${updatedBeatmap.mapper.replace(" ", "%20")})
                     """.prependIndent(),
                     EmbedColor.BLUE,
                     EmbedThumbnail("https://b.ppy.sh/thumb/${updatedBeatmap.osuId}l.jpg"),
@@ -380,7 +380,7 @@ class BeatmapService(
         discordWebhookClient.send(
                 """**$messageIcon Updated status to ${BeatmapStatus.fromPrio(newStatus).getReadableName()}**
                             **[${databaseBeatmap.artist} - ${databaseBeatmap.title}](https://osu.ppy.sh/beatmapsets/${databaseBeatmap.osuId})**
-                            Mapped by [${databaseBeatmap.mapper}](https://osu.ppy.sh/users/${databaseBeatmap.mapper})
+                            Mapped by [${databaseBeatmap.mapper}](https://osu.ppy.sh/users/${databaseBeatmap.mapper.replace(" ", "%20")})
                         """.prependIndent(),
                 EmbedColor.ORANGE,
                 EmbedThumbnail("https://b.ppy.sh/thumb/${databaseBeatmap.osuId}l.jpg"),
