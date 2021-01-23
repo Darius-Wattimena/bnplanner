@@ -9,6 +9,7 @@ data class DetailedUser(
         var aliases: MutableList<String>,
         val hasEditPermissions: Boolean,
         val hasAdminPermissions: Boolean,
+        val hasHiddenPermission: Boolean,
         var role: OsuRole,
         val events: List<Event>
 )

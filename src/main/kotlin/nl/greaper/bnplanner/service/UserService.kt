@@ -27,6 +27,7 @@ class UserService(
                 user.aliases,
                 user.hasEditPermissions,
                 user.hasAdminPermissions,
+                user.hasHiddenPermissions,
                 user.role,
                 user.plannerEvents
         )

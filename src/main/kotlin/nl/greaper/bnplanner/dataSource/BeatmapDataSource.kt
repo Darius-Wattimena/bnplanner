@@ -2,11 +2,13 @@ package nl.greaper.bnplanner.dataSource
 
 import com.mongodb.client.MongoDatabase
 import com.mongodb.client.model.IndexOptions
+import mu.KotlinLogging
 import nl.greaper.bnplanner.exception.BeatmapException
 import nl.greaper.bnplanner.model.FindResponse
 import nl.greaper.bnplanner.model.beatmap.Beatmap
 import nl.greaper.bnplanner.model.beatmap.BeatmapStatus
 import nl.greaper.bnplanner.model.filter.BeatmapFilter
+import nl.greaper.bnplanner.util.logIfNull
 import nl.greaper.bnplanner.util.quote
 import org.litote.kmongo.*
 import org.springframework.stereotype.Component
@@ -14,6 +16,7 @@ import org.springframework.stereotype.Component
 @Component
 class BeatmapDataSource(database: MongoDatabase) {
     private val collection = database.getCollection("beatmap", Beatmap::class.java)
+    private val log = KotlinLogging.logger {}
 
     init {
         collection.ensureIndex(ascending(
@@ -37,9 +40,12 @@ class BeatmapDataSource(database: MongoDatabase) {
         return collection.deleteOne(Beatmap::osuId eq beatmapId).deletedCount > 0
     }
 
-    fun find(beatmapSetId: Long): Beatmap {
-        return collection.findOneById(beatmapSetId)
-                ?: throw BeatmapException("Beatmap not registered on the planner")
+    fun find(beatmapSetId: Long): Beatmap? {
+        val beatmap = collection.findOneById(beatmapSetId).logIfNull(log) {
+            "Could not find the beatmap in database with BeatmapSetID = $beatmapSetId"
+        }
+
+        return beatmap
     }
 
     fun findAll(filter: BeatmapFilter): FindResponse<Beatmap> {

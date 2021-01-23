@@ -1,5 +1,6 @@
 package nl.greaper.bnplanner.service
 
+import mu.KotlinLogging
 import nl.greaper.bnplanner.DiscordWebhookClient
 import nl.greaper.bnplanner.dataSource.BeatmapDataSource
 import nl.greaper.bnplanner.dataSource.UserDataSource
@@ -37,10 +38,11 @@ class BeatmapService(
     private val ADDED_NOMINATOR_ICON = "✅"
     private val REMOVED_NOMINATOR_ICON = "❌"
 
+    private val log = KotlinLogging.logger {}
 
     fun addBeatmap(editor: User, beatmapId: Long, token: String): Boolean {
         if (dataSource.exists(beatmapId)) {
-            throw BeatmapException("Beatmapset already registered on the planner")
+            log.info { "Beatmapset with id $beatmapId is already registered to the planner" }
         }
         val now = Instant.now().epochSecond
         val beatmapSet = osuService.findBeatmapSetInfo(token, beatmapId)
@@ -64,12 +66,12 @@ class BeatmapService(
         }
     }
 
-    fun findBeatmap(beatmapId: Long): Beatmap {
+    fun findBeatmap(beatmapId: Long): Beatmap? {
         return dataSource.find(beatmapId)
     }
 
     fun deleteBeatmap(beatmapId: Long, editor: User): Boolean {
-        val beatmap = dataSource.find(beatmapId)
+        val beatmap = dataSource.find(beatmapId) ?: return false
         val result = dataSource.deleteById(beatmapId)
 
         discordWebhookClient.send(
@@ -86,8 +88,8 @@ class BeatmapService(
         return result
     }
 
-    fun refreshMetadata(editor: User, beatmapId: Long, token: String) {
-        val beatmap = dataSource.find(beatmapId)
+    fun refreshMetadata(editor: User, beatmapId: Long, token: String): Boolean {
+        val beatmap = dataSource.find(beatmapId) ?: return false
         val beatmapSet = osuService.findBeatmapSetInfo(token, beatmapId)
 
         if (beatmapSet != null) {
@@ -98,13 +100,16 @@ class BeatmapService(
             )
 
             dataSource.save(updatedBeatmap)
+
+            return true
         } else {
-            throw BeatmapException("Could not find the beatmap on the osu! api")
+            log.info { "Could not find the beatmap on the osu! api with BeatmapSetID = $beatmapId" }
+            return false
         }
     }
 
-    fun findDetailedBeatmap(beatmapId: Long): DetailedBeatmap {
-        val beatmap = dataSource.find(beatmapId)
+    fun findDetailedBeatmap(beatmapId: Long): DetailedBeatmap? {
+        val beatmap = dataSource.find(beatmapId) ?: return null
 
         return DetailedBeatmap(
                 beatmap.osuId,
@@ -151,7 +156,7 @@ class BeatmapService(
 
     //TODO write unit test
     fun updateBeatmap(editor: User, beatmapId: Long, updated: UpdatedBeatmap) {
-        val databaseBeatmap = dataSource.find(beatmapId)
+        val databaseBeatmap = dataSource.find(beatmapId) ?: return
         val oldArtist = databaseBeatmap.artist
         val oldTitle = databaseBeatmap.title
         val oldMapper = databaseBeatmap.mapper
@@ -341,7 +346,7 @@ class BeatmapService(
     }
 
     fun setBeatmapStatus(editor: User, beatmapId: Long, statusUpdate: UpdatedBeatmapStatus) {
-        val databaseBeatmap = dataSource.find(beatmapId)
+        val databaseBeatmap = dataSource.find(beatmapId) ?: return
         val newStatus = statusUpdate.status
 
         // Status didn't change so we can ignore
