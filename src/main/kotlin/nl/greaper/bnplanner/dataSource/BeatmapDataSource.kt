@@ -54,10 +54,19 @@ class BeatmapDataSource(database: MongoDatabase) {
                         if (filter.artist != null) { Beatmap::artist regex quote(filter.artist).toRegex(RegexOption.IGNORE_CASE) } else null,
                         if (filter.title != null) { Beatmap::title regex quote(filter.title).toRegex(RegexOption.IGNORE_CASE) } else null,
                         if (filter.mapper != null) { Beatmap::mapper regex quote(filter.mapper).toRegex(RegexOption.IGNORE_CASE) } else null,
+                        if (filter.mapperId != null) { Beatmap::mapperId eq filter.mapperId } else null,
                         if (filter.nominator.any { it != 0L }) { Beatmap::nominators `in` filter.nominator.filter { it != 0L } } else null,
                         if (filter.hideRanked != null && !filter.hideRanked) null else Beatmap::status ne BeatmapStatus.Ranked.prio,
                         if (filter.hideGraved != null && !filter.hideGraved) null else Beatmap::status ne BeatmapStatus.Graved.prio,
-                        if (filter.hideWithTwoNominators != null && filter.hideWithTwoNominators) { Beatmap::nominators `in` listOf<Long>(0) } else null
+                        if (filter.hideWithTwoNominators != null && filter.hideWithTwoNominators) { Beatmap::nominators `in` listOf<Long>(0) } else null,
+                        if (filter.statisticsStart != null) { or(
+                                Beatmap::dateUpdated gte filter.statisticsStart
+                                //Beatmap::dateRanked gte filter.statisticsStart
+                        ) } else null,
+                        if (filter.statisticsEnd != null) { or(
+                                Beatmap::dateUpdated lte filter.statisticsEnd
+                                //Beatmap::dateRanked lte filter.statisticsEnd
+                        ) } else null
                 )),
                 or(listOfNotNull(
                         if (filter.status.contains(BeatmapStatus.Pending.prio)) Beatmap::status eq BeatmapStatus.Pending.prio else null,

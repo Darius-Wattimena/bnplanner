@@ -4,6 +4,7 @@ data class BeatmapFilter(
         val artist: String?,
         val title: String?,
         val mapper: String?,
+        val mapperId: Long?,
 
         val hideGraved: Boolean? = false,
         val hideRanked: Boolean? = false,
@@ -13,6 +14,8 @@ data class BeatmapFilter(
         val page: Int?,
         val countTotal: Boolean? = false,
         val asStatistics: Boolean = false,
+        val statisticsStart: Long? = null,
+        val statisticsEnd: Long? = null,
 
         val status: List<Long> = emptyList(),
         val nominator: List<Long> = emptyList()

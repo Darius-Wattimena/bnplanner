@@ -161,6 +161,7 @@ class BeatmapController(
                     artist,
                     title,
                     mapper,
+                    null,
                     hideGraved,
                     hideRanked,
                     hideWithTwoNominators,
@@ -168,6 +169,8 @@ class BeatmapController(
                     page,
                     countTotal,
                     false,
+                    null,
+                    null,
                     status ?: emptyList(),
                     nominator ?: emptyList()
             ))

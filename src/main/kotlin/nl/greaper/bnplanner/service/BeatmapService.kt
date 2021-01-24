@@ -47,7 +47,7 @@ class BeatmapService(
         val now = Instant.now().epochSecond
         val beatmapSet = osuService.findBeatmapSetInfo(token, beatmapId)
         return if (beatmapSet != null) {
-            val newBeatmap = Beatmap(beatmapId, beatmapSet.artist, beatmapSet.title, "", beatmapSet.creator, dateAdded = now, dateUpdated = now)
+            val newBeatmap = Beatmap(beatmapId, beatmapSet.artist, beatmapSet.title, "", beatmapSet.creator, beatmapSet.user_id, dateAdded = now, dateUpdated = now)
             dataSource.save(newBeatmap)
             newBeatmap.plannerEvents.add(Events.asBeatmapCreatedEvent(editor.osuId))
             dataSource.save(newBeatmap)
