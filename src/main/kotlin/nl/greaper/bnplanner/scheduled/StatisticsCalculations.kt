@@ -95,7 +95,8 @@ class StatisticsCalculations(
                     totalDisqualified = nominatorBeatmaps.filter { it.status == BeatmapStatus.Disqualified.prio }.count(),
                     totalPopped = nominatorBeatmaps.filter { it.status == BeatmapStatus.Popped.prio }.count(),
                     totalRanked = nominatorBeatmaps.filter { it.status == BeatmapStatus.Ranked.prio }.count(),
-                    totalGraved = nominatorBeatmaps.filter { it.status == BeatmapStatus.Graved.prio }.count()
+                    totalGraved = nominatorBeatmaps.filter { it.status == BeatmapStatus.Graved.prio }.count(),
+                    totalIcons = nominatorBeatmaps.count()
             )
 
             allStatistics.add(statistics)

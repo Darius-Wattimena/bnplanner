@@ -20,7 +20,8 @@ data class UserStatistics(
         val totalDisqualified: Int,
         val totalPopped: Int,
         val totalRanked: Int,
-        val totalGraved: Int
+        val totalGraved: Int,
+        val totalIcons: Int
 ) {
     enum class StatisticsType {
         DAILY,
