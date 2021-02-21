@@ -4,7 +4,6 @@ import mu.KotlinLogging
 import nl.greaper.bnplanner.DiscordWebhookClient
 import nl.greaper.bnplanner.dataSource.BeatmapDataSource
 import nl.greaper.bnplanner.dataSource.UserDataSource
-import nl.greaper.bnplanner.exception.BeatmapException
 import nl.greaper.bnplanner.model.FindResponse
 import nl.greaper.bnplanner.model.beatmap.*
 import nl.greaper.bnplanner.model.discord.EmbedColor
@@ -24,19 +23,21 @@ class BeatmapService(
         val osuService: OsuService,
         val discordWebhookClient: DiscordWebhookClient
 ) {
-    private val UPDATED_STATUS_ICON = "\uD83D\uDCAD" // 💭
-    private val RANKED_STATUS_ICON = "\uD83D\uDC96" // 💖
-    private val NOMINATED_STATUS_ICON = "❤"
-    private val BUBBLED_STATUS_ICON = "\uD83D\uDCAD" // 💭
-    private val DISQUALIFIED_STATUS_ICON = "\uD83D\uDC94" // 💔
-    private val POPPED_STATUS_ICON = "\uD83D\uDDEF" // 🗯️
-    private val GRAVED_STATUS_ICON = "\uD83D\uDDD1" // 🗑️
-    private val UNFINISHED_STATUS_ICON = "\uD83D\uDD28" // 🔨
+    companion object {
+        const val UPDATED_STATUS_ICON = "\uD83D\uDCAD" // 💭
+        const val RANKED_STATUS_ICON = "\uD83D\uDC96" // 💖
+        const val NOMINATED_STATUS_ICON = "❤"
+        const val BUBBLED_STATUS_ICON = "\uD83D\uDCAD" // 💭
+        const val DISQUALIFIED_STATUS_ICON = "\uD83D\uDC94" // 💔
+        const val POPPED_STATUS_ICON = "\uD83D\uDDEF" // 🗯️
+        const val GRAVED_STATUS_ICON = "\uD83D\uDDD1" // 🗑️
+        const val UNFINISHED_STATUS_ICON = "\uD83D\uDD28" // 🔨
 
-    private val CREATED_BEATMAP_ICON = "\uD83C\uDF1F" // 🌟
-    private val DELETED_BEATMAP_ICON = "\uD83D\uDC12" // 🐒
-    private val ADDED_NOMINATOR_ICON = "✅"
-    private val REMOVED_NOMINATOR_ICON = "❌"
+        const val CREATED_BEATMAP_ICON = "\uD83C\uDF1F" // 🌟
+        const val DELETED_BEATMAP_ICON = "\uD83D\uDC12" // 🐒
+        const val ADDED_NOMINATOR_ICON = "✅"
+        const val REMOVED_NOMINATOR_ICON = "❌"
+    }
 
     private val log = KotlinLogging.logger {}
 
@@ -58,7 +59,8 @@ class BeatmapService(
                     """.prependIndent(),
                     EmbedColor.GREEN,
                     EmbedThumbnail("https://b.ppy.sh/thumb/${newBeatmap.osuId}l.jpg"),
-                    EmbedFooter(editor.osuName, editor.profilePictureUri)
+                    EmbedFooter(editor.osuName, editor.profilePictureUri),
+                confidential = true
             )
             true
         } else {
@@ -92,19 +94,19 @@ class BeatmapService(
         val beatmap = dataSource.find(beatmapId) ?: return false
         val beatmapSet = osuService.findBeatmapSetInfo(token, beatmapId)
 
-        if (beatmapSet != null) {
+        return if (beatmapSet != null) {
             val updatedBeatmap = beatmap.copy(
-                    mapper = beatmapSet.creator,
-                    artist = beatmapSet.artist,
-                    title = beatmapSet.title
+                mapper = beatmapSet.creator,
+                artist = beatmapSet.artist,
+                title = beatmapSet.title
             )
 
             dataSource.save(updatedBeatmap)
 
-            return true
+            true
         } else {
             log.info { "Could not find the beatmap on the osu! api with BeatmapSetID = $beatmapId" }
-            return false
+            false
         }
     }
 
@@ -192,7 +194,7 @@ class BeatmapService(
         val removedNominators = oldNominators.filter { !updatedBeatmap.nominators.contains(it) }
                 .mapNotNull { osuId -> if (osuId != 0L) userDataSource.find(osuId) else null }
 
-        logNominatorChanges(addedNominators, removedNominators, updatedBeatmap, editor)
+        logNominatorChanges(addedNominators, removedNominators, updatedBeatmap, editor, updated.asNewlyCreated)
 
         val now = Instant.now().epochSecond
         var nominatedByBNOne = updatedBeatmap.nominatedByBNOne
@@ -308,8 +310,12 @@ class BeatmapService(
     /**
      * Log nominator changes to the planner events and also push a message to discord
      */
-    private fun logNominatorChanges(addedNominators: List<User>, removedNominators: List<User>, updatedBeatmap: Beatmap, editor: User) {
-        var nominatorChangesText = ""
+    private fun logNominatorChanges(addedNominators: List<User>, removedNominators: List<User>, updatedBeatmap: Beatmap, editor: User, asNewlyCreated: Boolean) {
+        var nominatorChangesText = if (asNewlyCreated) {
+            "$CREATED_BEATMAP_ICON **Created**\n"
+        } else {
+            ""
+        }
         var firstItem = true
 
         addedNominators.forEach {
