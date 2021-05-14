@@ -1,19 +1,26 @@
 package nl.greaper.bnplanner.controller
 
+import com.natpryce.konfig.Configuration
 import mu.KotlinLogging
+import nl.greaper.bnplanner.config.KonfigConfiguration
+import nl.greaper.bnplanner.config.KonfigConfiguration.aiess
 import nl.greaper.bnplanner.model.FindResponse
 import nl.greaper.bnplanner.model.beatmap.*
+import nl.greaper.bnplanner.model.event.AiessBeatmapEvent
 import nl.greaper.bnplanner.model.filter.BeatmapFilter
 import nl.greaper.bnplanner.model.filter.BeatmapFilterLimit
 import nl.greaper.bnplanner.service.BeatmapService
 import nl.greaper.bnplanner.service.OsuService
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/v1/beatmap")
 class BeatmapController(
-        val service: BeatmapService,
-        val osuService: OsuService
+    val config: Configuration,
+    val service: BeatmapService,
+    val osuService: OsuService
 ) {
     private val log = KotlinLogging.logger {}
 
@@ -116,6 +123,27 @@ class BeatmapController(
         } catch (ex: Exception) {
             log.error("Error while executing Request", ex)
             false
+        }
+    }
+
+    @PostMapping("/add/event/aiess")
+    fun addAiessEvent(
+        @RequestHeader(name = "Authorization") token: String,
+        @RequestBody aiessEvent: AiessBeatmapEvent
+    ): ResponseEntity<Boolean?> {
+        return if (config[aiess.enabled]) {
+            if ("Bearer " + config[aiess.token] == token) {
+                log.info("Received aiess event")
+                service.addAiessEventToBeatmap(aiessEvent)
+                ResponseEntity(HttpStatus.OK)
+            } else {
+                log.info("Received aiess event, incorrect token")
+                ResponseEntity(HttpStatus.UNAUTHORIZED)
+            }
+
+        } else {
+            log.info("Received aiess event, aiess is not enabled in the config!")
+            ResponseEntity(HttpStatus.OK)
         }
     }
 

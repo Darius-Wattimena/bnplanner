@@ -9,6 +9,7 @@ import nl.greaper.bnplanner.model.beatmap.*
 import nl.greaper.bnplanner.model.discord.EmbedColor
 import nl.greaper.bnplanner.model.discord.EmbedFooter
 import nl.greaper.bnplanner.model.discord.EmbedThumbnail
+import nl.greaper.bnplanner.model.event.AiessBeatmapEvent
 import nl.greaper.bnplanner.model.event.Events
 import nl.greaper.bnplanner.model.filter.BeatmapFilter
 import nl.greaper.bnplanner.model.user.User
@@ -91,6 +92,7 @@ class BeatmapService(
     }
 
     fun refreshMetadata(editor: User, beatmapId: Long, token: String): Boolean {
+        val now = Instant.now().epochSecond
         val beatmap = dataSource.find(beatmapId) ?: return false
         val beatmapSet = osuService.findBeatmapSetInfo(token, beatmapId)
 
@@ -98,7 +100,8 @@ class BeatmapService(
             val updatedBeatmap = beatmap.copy(
                 mapper = beatmapSet.creator,
                 artist = beatmapSet.artist,
-                title = beatmapSet.title
+                title = beatmapSet.title,
+                dateUpdated = now
             )
 
             dataSource.save(updatedBeatmap)
@@ -226,6 +229,78 @@ class BeatmapService(
                 dateUpdated = now,
                 dateRanked = dateRanked
         ))
+    }
+
+    fun addAiessEventToBeatmap(aiessEvent: AiessBeatmapEvent) {
+        val beatmap = dataSource.find(aiessEvent.beatmapSetId)
+        val aiessUser = userDataSource.findAiess()
+
+        // Only update beatmaps which are on the planner via Aiess
+        if (beatmap != null) {
+            val updatedBeatmap = getBnNominatedStatusFromAiessEvent(beatmap, aiessEvent).copy(
+                status = aiessEvent.status,
+                aiessEvents = (beatmap.aiessEvents + aiessEvent).toMutableList(),
+                dateUpdated = aiessEvent.time
+            )
+
+            logNewStatus(beatmap.status, aiessEvent.status, beatmap, aiessUser)
+
+            dataSource.save(updatedBeatmap)
+        }
+    }
+
+    fun getBnNominatedStatusFromAiessEvent(beatmap: Beatmap, aiessEvent: AiessBeatmapEvent): Beatmap {
+        when (aiessEvent.status) {
+            BeatmapStatus.Ranked.prio -> {
+                return beatmap.copy(
+                    nominatedByBNOne = true,
+                    nominatedByBNTwo = true
+                )
+            }
+            BeatmapStatus.Qualified.prio, BeatmapStatus.Bubbled.prio -> {
+                // Identify if this is an event from a BN nominating the set
+                val beatmapBn = if (aiessEvent.status == BeatmapStatus.Qualified.prio || aiessEvent.status == BeatmapStatus.Bubbled.prio) {
+                    aiessEvent.userId
+                } else {
+                    null
+                }
+
+                val firstBn = beatmap.nominators[0]
+                val secondBn = beatmap.nominators[1]
+
+                var nominatedByBNOne = beatmap.nominatedByBNOne
+                var nominatedByBNTwo = beatmap.nominatedByBNTwo
+                var newNominators = beatmap.nominators
+
+                if (firstBn == beatmapBn) {
+                    nominatedByBNOne = true
+                } else if (secondBn == beatmapBn) {
+                    nominatedByBNTwo = true
+                } else {
+                    // Nominator is not one of the set BNs of the set so replace the first one which didn't nominated it yet
+                    if (nominatedByBNOne) {
+                        nominatedByBNTwo = true
+                        newNominators = mutableListOf(beatmap.nominators[0], beatmapBn!!)
+                    } else {
+                        nominatedByBNOne = true
+                        newNominators = mutableListOf(beatmapBn!!, beatmap.nominators[1])
+                    }
+                }
+
+                return beatmap.copy(
+                    nominatedByBNOne = nominatedByBNOne,
+                    nominatedByBNTwo = nominatedByBNTwo,
+                    nominators = newNominators
+                )
+            }
+            BeatmapStatus.Popped.prio, BeatmapStatus.Disqualified.prio -> {
+                return beatmap.copy(
+                    nominatedByBNOne = false,
+                    nominatedByBNTwo = false
+                )
+            }
+            else -> return beatmap
+        }
     }
 
     private fun logNewStatus(oldStatus: Long, newStatus: Long, updatedBeatmap: Beatmap, editor: User) {

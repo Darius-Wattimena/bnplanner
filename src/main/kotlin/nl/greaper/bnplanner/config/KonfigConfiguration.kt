@@ -51,4 +51,9 @@ class KonfigConfiguration {
         val webhook by stringType
         val moddingwebhook by listType(stringType)
     }
+
+    object aiess : PropertyGroup() {
+        val enabled by booleanType
+        val token by stringType
+    }
 }

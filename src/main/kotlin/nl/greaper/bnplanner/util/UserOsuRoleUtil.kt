@@ -9,6 +9,7 @@ fun OsuRole.getReadableName(): String {
         OsuRole.NAT -> "Nomination Assessment Team"
         OsuRole.CA -> "Retired Nominator"
         OsuRole.OBS -> "Other Nominator"
+        OsuRole.BOT -> "Bot"
         OsuRole.GST -> "Guest"
     }
 }

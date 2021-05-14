@@ -1,5 +1,6 @@
 package nl.greaper.bnplanner.model.beatmap
 
+import nl.greaper.bnplanner.model.event.AiessBeatmapEvent
 import nl.greaper.bnplanner.model.event.Event
 import org.bson.codecs.pojo.annotations.BsonId
 
@@ -16,6 +17,7 @@ data class Beatmap(
         val interested: MutableList<Long> = mutableListOf(),
         val plannerEvents: MutableList<Event> = mutableListOf(),
         val osuEvents: MutableList<Event> = mutableListOf(),
+        val aiessEvents: MutableList<AiessBeatmapEvent> = mutableListOf(),
         val dateAdded: Long = 0,
         val dateUpdated: Long = 0,
         val dateRanked: Long = 0,

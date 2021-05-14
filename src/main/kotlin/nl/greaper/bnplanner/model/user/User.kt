@@ -25,5 +25,6 @@ enum class OsuRole {
         NAT,
         CA,
         OBS,
+        BOT,
         GST
 }

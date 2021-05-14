@@ -34,6 +34,16 @@ class UserDataSource(database: MongoDatabase) {
         )
     }
 
+    fun findAiess(): User {
+        return try {
+            find(-1)
+        } catch (ex: Throwable) {
+            val aiessUser = User(-1, "Aiess", "", hasAdminPermissions = true, hasEditPermissions = true)
+            save(aiessUser)
+            aiessUser
+        }
+    }
+
     fun find(osuId: Long): User = collection.findOne(User::osuId eq osuId)
             ?: throw UserException("Could not find user with provided ID")
 
