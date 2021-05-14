@@ -132,7 +132,7 @@ class BeatmapController(
         @RequestBody aiessEvent: AiessBeatmapEvent
     ): ResponseEntity<Boolean?> {
         return if (config[aiess.enabled]) {
-            if ("Bearer " + config[aiess.token] == token) {
+            if (config[aiess.token] == token) {
                 log.info("Received aiess event")
                 service.addAiessEventToBeatmap(aiessEvent)
                 ResponseEntity(HttpStatus.OK)
