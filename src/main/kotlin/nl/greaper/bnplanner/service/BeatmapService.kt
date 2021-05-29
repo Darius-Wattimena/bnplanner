@@ -126,8 +126,6 @@ class BeatmapService(
                 beatmap.status,
                 beatmap.nominators,
                 beatmap.interested,
-                beatmap.plannerEvents,
-                beatmap.osuEvents,
                 beatmap.nominatedByBNOne,
                 beatmap.nominatedByBNTwo,
                 beatmap.dateUpdated,
