@@ -45,7 +45,9 @@ class BeatmapService(
     fun addBeatmap(editor: User, beatmapId: Long, token: String): Boolean {
         if (dataSource.exists(beatmapId)) {
             log.info { "Beatmapset with id $beatmapId is already registered to the planner" }
+            return true
         }
+
         val now = Instant.now().epochSecond
         val beatmapSet = osuService.findBeatmapSetInfo(token, beatmapId)
         return if (beatmapSet != null) {
