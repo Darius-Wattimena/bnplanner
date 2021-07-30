@@ -43,7 +43,7 @@ object Events {
     }
 
     fun asBeatmapStatusEvent(userId: Long, newStatus: Long): Event {
-        return Event(userId, "Updated Status", "Updated status to ${BeatmapStatus.fromPrio(newStatus).getReadableName()}.")
+        return Event(userId, "Updated Status", "Updated status to ${BeatmapStatus.fromPrio(newStatus)?.getReadableName()}.")
     }
 
     fun asUserUpdateUsernameEvent(editorId: Long, oldName: String, newName: String): Event {

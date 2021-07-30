@@ -37,7 +37,7 @@ enum class BeatmapStatus(val prio: Long) {
     Unfinished(8);
 
     companion object {
-        fun fromPrio(prio: Long): BeatmapStatus
+        fun fromPrio(prio: Long): BeatmapStatus?
         {
             return when (prio) {
                 Qualified.prio -> Qualified
@@ -48,7 +48,7 @@ enum class BeatmapStatus(val prio: Long) {
                 Ranked.prio -> Ranked
                 Graved.prio -> Graved
                 Unfinished.prio -> Unfinished
-                else -> Pending
+                else -> null
             }
         }
     }

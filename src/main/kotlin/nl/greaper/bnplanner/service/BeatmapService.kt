@@ -250,20 +250,16 @@ class BeatmapService(
     }
 
     fun getBnNominatedStatusFromAiessEvent(beatmap: Beatmap, aiessEvent: AiessBeatmapEvent): Beatmap {
-        when (aiessEvent.status) {
-            BeatmapStatus.Ranked.prio -> {
+        when (val parsedAiessBeatmapStatus = BeatmapStatus.fromPrio(aiessEvent.status)) {
+            BeatmapStatus.Ranked -> {
                 return beatmap.copy(
                     nominatedByBNOne = true,
                     nominatedByBNTwo = true
                 )
             }
-            BeatmapStatus.Qualified.prio, BeatmapStatus.Bubbled.prio -> {
+            BeatmapStatus.Qualified, BeatmapStatus.Bubbled -> {
                 // Identify if this is an event from a BN nominating the set
-                val beatmapBn = if (aiessEvent.status == BeatmapStatus.Qualified.prio || aiessEvent.status == BeatmapStatus.Bubbled.prio) {
-                    aiessEvent.userId
-                } else {
-                    null
-                }
+                val beatmapBn = aiessEvent.userId
 
                 val firstBn = beatmap.nominators[0]
                 val secondBn = beatmap.nominators[1]
@@ -277,6 +273,20 @@ class BeatmapService(
                 } else if (secondBn == beatmapBn) {
                     nominatedByBNTwo = true
                 } else {
+                    if (aiessEvent.userId == null) {
+                        // Aiess fucked up somewhere so we just update the beatmap based on the status aiess gave
+                        return if (parsedAiessBeatmapStatus == BeatmapStatus.Qualified) {
+                            beatmap.copy(
+                                nominatedByBNOne = true,
+                                nominatedByBNTwo = true
+                            )
+                        } else {
+                            // Map is bubbled but we don't know the user who did this.
+                            // Only mark the beatmap as bubbled but don't change any users
+                            return beatmap
+                        }
+                    }
+
                     // Nominator is not one of the set BNs of the set so replace the first one which didn't nominated it yet
                     if (nominatedByBNOne) {
                         nominatedByBNTwo = true
@@ -293,7 +303,7 @@ class BeatmapService(
                     nominators = newNominators
                 )
             }
-            BeatmapStatus.Popped.prio, BeatmapStatus.Disqualified.prio -> {
+            BeatmapStatus.Popped, BeatmapStatus.Disqualified -> {
                 return beatmap.copy(
                     nominatedByBNOne = false,
                     nominatedByBNTwo = false
@@ -309,7 +319,7 @@ class BeatmapService(
             val messageIcon = getMessageIcon(newStatus)
 
             discordWebhookClient.send(
-                    """**$messageIcon Updated status to ${BeatmapStatus.fromPrio(newStatus).getReadableName()}**
+                    """**$messageIcon Updated status to ${BeatmapStatus.fromPrio(newStatus)?.getReadableName()}**
                         **[${updatedBeatmap.artist} - ${updatedBeatmap.title}](https://osu.ppy.sh/beatmapsets/${updatedBeatmap.osuId})**
                         Mapped by [${updatedBeatmap.mapper}](https://osu.ppy.sh/users/${updatedBeatmap.mapper.replace(" ", "%20")})
                     """.prependIndent(),
@@ -469,7 +479,7 @@ class BeatmapService(
         val messageIcon = getMessageIcon(newStatus)
 
         discordWebhookClient.send(
-                """**$messageIcon Updated status to ${BeatmapStatus.fromPrio(newStatus).getReadableName()}**
+                """**$messageIcon Updated status to ${BeatmapStatus.fromPrio(newStatus)?.getReadableName()}**
                             **[${databaseBeatmap.artist} - ${databaseBeatmap.title}](https://osu.ppy.sh/beatmapsets/${databaseBeatmap.osuId})**
                             Mapped by [${databaseBeatmap.mapper}](https://osu.ppy.sh/users/${databaseBeatmap.mapper.replace(" ", "%20")})
                         """.prependIndent(),
@@ -498,6 +508,7 @@ class BeatmapService(
             BeatmapStatus.Ranked -> RANKED_STATUS_ICON
             BeatmapStatus.Graved -> GRAVED_STATUS_ICON
             BeatmapStatus.Unfinished -> UNFINISHED_STATUS_ICON
+            else -> REMOVED_NOMINATOR_ICON
         }
     }
 }
