@@ -10,13 +10,13 @@
     </parent>
     <groupId>nl.greaper</groupId>
     <artifactId>bnplanner</artifactId>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.1.0-SNAPSHOT</version>
     <name>bnplanner</name>
     <description>bnplanner</description>
 
     <properties>
-        <java.version>1.8</java.version>
-        <kotlin.version>1.3.72</kotlin.version>
+        <java.version>11</java.version>
+        <kotlin.version>1.5.21</kotlin.version>
     </properties>
 
     <dependencies>
