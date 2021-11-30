@@ -1,7 +1,7 @@
 package nl.greaper.bnplanner.controller
 
 import mu.KotlinLogging
-import nl.greaper.bnplanner.model.FindResponse
+import nl.greaper.bnplanner.model.LegacyFindResponse
 import nl.greaper.bnplanner.model.filter.UserFilter
 import nl.greaper.bnplanner.model.filter.UserFilterLimit
 import nl.greaper.bnplanner.model.user.*
@@ -66,7 +66,7 @@ class UserController(
             @RequestParam countTotal: Boolean?,
             @RequestParam canEdit: Boolean?,
             @RequestParam isAdmin: Boolean?
-    ): FindResponse<FoundUser> {
+    ): LegacyFindResponse<FoundUser> {
         return try {
             return service.findUsers(UserFilter(
                     name,
@@ -79,7 +79,7 @@ class UserController(
             ))
         } catch (ex: Exception) {
             log.error("Error while executing Request", ex)
-            FindResponse()
+            LegacyFindResponse()
         }
     }
 

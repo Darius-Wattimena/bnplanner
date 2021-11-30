@@ -2,14 +2,13 @@ package nl.greaper.bnplanner.controller
 
 import com.natpryce.konfig.Configuration
 import mu.KotlinLogging
-import nl.greaper.bnplanner.config.KonfigConfiguration
 import nl.greaper.bnplanner.config.KonfigConfiguration.aiess
-import nl.greaper.bnplanner.model.FindResponse
+import nl.greaper.bnplanner.model.LegacyFindResponse
 import nl.greaper.bnplanner.model.beatmap.*
 import nl.greaper.bnplanner.model.event.AiessBeatmapEvent
 import nl.greaper.bnplanner.model.filter.BeatmapFilter
 import nl.greaper.bnplanner.model.filter.BeatmapFilterLimit
-import nl.greaper.bnplanner.service.BeatmapService
+import nl.greaper.bnplanner.service.LegacyBeatmapService
 import nl.greaper.bnplanner.service.OsuService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -17,9 +16,9 @@ import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/v1/beatmap")
-class BeatmapController(
+class LegacyBeatmapController(
     val config: Configuration,
-    val service: BeatmapService,
+    val service: LegacyBeatmapService,
     val osuService: OsuService
 ) {
     private val log = KotlinLogging.logger {}
@@ -183,7 +182,7 @@ class BeatmapController(
             @RequestParam hideRanked: Boolean?,
             @RequestParam hideWithTwoNominators: Boolean?,
             @RequestParam nominator: List<Long>? = emptyList()
-    ): FindResponse<FoundBeatmap> {
+    ): LegacyFindResponse<FoundBeatmap> {
         return try {
             return service.findBeatmaps(BeatmapFilter(
                     artist,
@@ -204,7 +203,7 @@ class BeatmapController(
             ))
         } catch (ex: Exception) {
             log.error("Error while executing Request", ex)
-            FindResponse()
+            LegacyFindResponse()
         }
     }
 }

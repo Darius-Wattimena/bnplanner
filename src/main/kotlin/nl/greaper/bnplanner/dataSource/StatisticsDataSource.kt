@@ -18,8 +18,6 @@ class StatisticsDataSource(database: MongoDatabase) {
 
     fun insert(item: Statistics) = collection.insertOne(item)
 
-    fun save(item: Statistics) = collection.save(item)
-
     fun find(id: String) = collection.findOneById(id)
 
     fun findLatest() = collection.find()

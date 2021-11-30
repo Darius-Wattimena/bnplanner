@@ -1,8 +1,12 @@
 package nl.greaper.bnplanner.service
 
+import nl.greaper.bnplanner.DiscordWebhookClient
 import nl.greaper.bnplanner.dataSource.UserDataSource
 import nl.greaper.bnplanner.exception.UserException
-import nl.greaper.bnplanner.model.FindResponse
+import nl.greaper.bnplanner.model.LegacyFindResponse
+import nl.greaper.bnplanner.model.discord.EmbedColor
+import nl.greaper.bnplanner.model.discord.EmbedFooter
+import nl.greaper.bnplanner.model.discord.EmbedThumbnail
 import nl.greaper.bnplanner.model.event.Events
 import nl.greaper.bnplanner.model.filter.UserFilter
 import nl.greaper.bnplanner.model.user.*
@@ -11,8 +15,13 @@ import org.springframework.stereotype.Service
 @Service
 class UserService(
         val dataSource: UserDataSource,
-        val osuService: OsuService
+        val osuService: OsuService,
+        val discordWebhookClient: DiscordWebhookClient
 ) {
+    companion object {
+        const val CREATED_USER = "\uD83C\uDF1F" // 🌟
+    }
+
     fun findUserWithAuth(authId: String): User? {
         return dataSource.findByAuthId(authId)
     }
@@ -44,7 +53,7 @@ class UserService(
         }
     }
 
-    fun findUsers(userFilter: UserFilter): FindResponse<FoundUser> {
+    fun findUsers(userFilter: UserFilter): LegacyFindResponse<FoundUser> {
         val foundUsers = dataSource.findAll(userFilter)
 
         val result = foundUsers.response.map {user ->
@@ -59,7 +68,7 @@ class UserService(
             )
         }
 
-        return FindResponse(
+        return LegacyFindResponse(
                 foundUsers.total,
                 foundUsers.count,
                 result,
@@ -128,6 +137,18 @@ class UserService(
             dataSource.save(user)
             user.plannerEvents.add(Events.asUserCreatedEvent(editorId))
             dataSource.save(user)
+
+            val bnPlannerUser = dataSource.findBNPlanner()
+
+            discordWebhookClient.send(
+                """$CREATED_USER **Created**
+                    **[${user.osuName}](https://osu.ppy.sh/users/${user.osuId})** has been added to the Planner!
+                """.prependIndent(),
+                EmbedColor.GOLD,
+                EmbedThumbnail(user.profilePictureUri),
+                EmbedFooter(bnPlannerUser.osuName, bnPlannerUser.profilePictureUri),
+                confidential = true
+            )
         }
     }
 }

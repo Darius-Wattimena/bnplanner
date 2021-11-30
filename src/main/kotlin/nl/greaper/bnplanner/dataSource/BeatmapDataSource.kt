@@ -3,13 +3,14 @@ package nl.greaper.bnplanner.dataSource
 import com.mongodb.client.MongoDatabase
 import com.mongodb.client.model.IndexOptions
 import mu.KotlinLogging
-import nl.greaper.bnplanner.exception.BeatmapException
-import nl.greaper.bnplanner.model.FindResponse
+import nl.greaper.bnplanner.model.LegacyFindResponse
 import nl.greaper.bnplanner.model.beatmap.Beatmap
+import nl.greaper.bnplanner.model.beatmap.BeatmapPage
 import nl.greaper.bnplanner.model.beatmap.BeatmapStatus
 import nl.greaper.bnplanner.model.filter.BeatmapFilter
 import nl.greaper.bnplanner.util.logIfNull
 import nl.greaper.bnplanner.util.quote
+import org.bson.conversions.Bson
 import org.litote.kmongo.*
 import org.springframework.stereotype.Component
 
@@ -19,13 +20,12 @@ class BeatmapDataSource(database: MongoDatabase) {
     private val log = KotlinLogging.logger {}
 
     init {
-        collection.ensureIndex(ascending(
-                Beatmap::artist,
-                Beatmap::title,
-                Beatmap::mapper,
-                Beatmap::nominators,
-                Beatmap::status
-        ), IndexOptions().name("query"))
+        collection.ensureIndex(Beatmap::artist)
+        collection.ensureIndex(Beatmap::title)
+        collection.ensureIndex(Beatmap::mapper)
+        collection.ensureIndex(Beatmap::nominators)
+        collection.ensureIndex(Beatmap::status)
+        collection.ensureIndex(Beatmap::dateUpdated)
     }
 
     fun save(beatmap: Beatmap) = collection.save(beatmap)
@@ -48,7 +48,95 @@ class BeatmapDataSource(database: MongoDatabase) {
         return beatmap
     }
 
-    fun findAll(filter: BeatmapFilter): FindResponse<Beatmap> {
+    fun setupFilter(
+        artist: String?,
+        title: String?,
+        mapper: String?,
+        status: List<Long>,
+        nominators: List<Long>,
+        page: BeatmapPage
+    ): Bson {
+        val filters = mutableListOf<Bson>()
+
+        artist?.let { filters += Beatmap::artist regex quote(it).toRegex(RegexOption.IGNORE_CASE) }
+        title?.let { filters += Beatmap::title regex quote(it).toRegex(RegexOption.IGNORE_CASE) }
+        mapper?.let { filters += Beatmap::mapper regex quote(it).toRegex(RegexOption.IGNORE_CASE) }
+
+        if (nominators.isNotEmpty()) {
+            filters += Beatmap::nominators `in` nominators
+        }
+
+        if (status.isNotEmpty()) {
+            filters += or(status.map { Beatmap::status eq it })
+        } else {
+            when (page) {
+                BeatmapPage.PENDING -> filters += listOf(
+                    Beatmap::status ne BeatmapStatus.Ranked.prio,
+                    Beatmap::status ne BeatmapStatus.Graved.prio
+                )
+                BeatmapPage.RANKED -> filters += Beatmap::status eq BeatmapStatus.Ranked.prio
+                BeatmapPage.GRAVEYARD -> filters += Beatmap::status eq BeatmapStatus.Graved.prio
+            }
+        }
+
+        return and(filters)
+    }
+
+    fun countAll(
+        artist: String?,
+        title: String?,
+        mapper: String?,
+        status: List<Long>,
+        nominators: List<Long>,
+        page: BeatmapPage
+    ): Int {
+        val filter = setupFilter(artist, title, mapper, status, nominators, page)
+        return collection.countDocuments(filter).toInt()
+    }
+
+    fun findAllInitial(
+        artist: String?,
+        title: String?,
+        mapper: String?,
+        status: List<Long>,
+        nominators: List<Long>,
+        limit: Int,
+        page: BeatmapPage
+    ): LegacyFindResponse<Beatmap> {
+        val filter = setupFilter(artist, title, mapper, status, nominators, page)
+
+        val findQuery = collection.find(filter)
+        findQuery.limit(limit)
+        findQuery.sort(and(ascending(Beatmap::status), descending(Beatmap::dateUpdated)))
+
+        val totalData = collection.countDocuments(filter).toInt()
+        val result = findQuery.toMutableList()
+
+        return LegacyFindResponse(totalData, result.count(), result)
+    }
+
+    fun findAll(
+        artist: String?,
+        title: String?,
+        mapper: String?,
+        status: List<Long>,
+        nominators: List<Long>,
+        from: Int,
+        to: Int,
+        page: BeatmapPage
+    ): LegacyFindResponse<Beatmap> {
+        val filter = setupFilter(artist, title, mapper, status, nominators, page)
+
+        val findQuery = collection.find(filter)
+        findQuery.limit(to - from)
+        findQuery.skip(from)
+        findQuery.sort(and(ascending(Beatmap::status), descending(Beatmap::dateUpdated)))
+        val result = findQuery.toMutableList()
+
+        return LegacyFindResponse(0, result.count(), result)
+    }
+
+    fun findAll(filter: BeatmapFilter): LegacyFindResponse<Beatmap> {
         val query = and(
                 and(listOfNotNull(
                         if (filter.artist != null) { Beatmap::artist regex quote(filter.artist).toRegex(RegexOption.IGNORE_CASE) } else null,
@@ -61,11 +149,9 @@ class BeatmapDataSource(database: MongoDatabase) {
                         if (filter.hideWithTwoNominators != null && filter.hideWithTwoNominators) { Beatmap::nominators `in` listOf<Long>(0) } else null,
                         if (filter.statisticsStart != null) { or(
                                 Beatmap::dateUpdated gte filter.statisticsStart
-                                //Beatmap::dateRanked gte filter.statisticsStart
                         ) } else null,
                         if (filter.statisticsEnd != null) { or(
                                 Beatmap::dateUpdated lte filter.statisticsEnd
-                                //Beatmap::dateRanked lte filter.statisticsEnd
                         ) } else null
                 )),
                 or(listOfNotNull(
@@ -103,7 +189,7 @@ class BeatmapDataSource(database: MongoDatabase) {
         findQuery.sort(and(ascending(Beatmap::status), descending(Beatmap::dateUpdated)))
 
         val result = findQuery.toMutableList()
-        return FindResponse(totalCount, result.count(), result)
+        return LegacyFindResponse(totalCount, result.count(), result)
     }
 
     fun countAll(): Long {

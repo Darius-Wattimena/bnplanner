@@ -2,10 +2,9 @@ package nl.greaper.bnplanner.model
 
 import nl.greaper.bnplanner.util.copyableRandomUUID
 
-data class FindResponse<T>(
+data class LegacyFindResponse<T>(
         val total: Int = 0,
         val count: Int = 0,
         val response: List<T> = emptyList(),
-        val hasMoreData: Boolean = false,
         val uuid: String = copyableRandomUUID()
 )

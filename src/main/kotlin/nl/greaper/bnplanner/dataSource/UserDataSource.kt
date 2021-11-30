@@ -4,7 +4,7 @@ import com.mongodb.client.MongoDatabase
 import com.mongodb.client.model.Collation
 import com.mongodb.client.model.IndexOptions
 import nl.greaper.bnplanner.exception.UserException
-import nl.greaper.bnplanner.model.FindResponse
+import nl.greaper.bnplanner.model.LegacyFindResponse
 import nl.greaper.bnplanner.model.beatmap.Beatmap
 import nl.greaper.bnplanner.model.filter.UserFilter
 import nl.greaper.bnplanner.model.user.OsuRole
@@ -44,6 +44,16 @@ class UserDataSource(database: MongoDatabase) {
         }
     }
 
+    fun findBNPlanner(): User {
+        return try {
+            find(-2)
+        } catch (ex: Throwable) {
+            val nominationPlanner = User(-2, "Nomination Planner", "", hasAdminPermissions = true, hasEditPermissions = true)
+            save(nominationPlanner)
+            nominationPlanner
+        }
+    }
+
     fun find(osuId: Long): User = collection.findOne(User::osuId eq osuId)
             ?: throw UserException("Could not find user with provided ID")
 
@@ -61,7 +71,7 @@ class UserDataSource(database: MongoDatabase) {
         return collection.find().toMutableList()
     }
 
-    fun findAll(filter: UserFilter): FindResponse<User> {
+    fun findAll(filter: UserFilter): LegacyFindResponse<User> {
         val query = and(
                 and(listOfNotNull(
                         if (filter.name != null) User::osuName regex quote(filter.name).toRegex(RegexOption.IGNORE_CASE) else null,
@@ -98,6 +108,6 @@ class UserDataSource(database: MongoDatabase) {
         }
 
         val result = findQuery.toMutableList()
-        return FindResponse(totalCount, result.count(), result)
+        return LegacyFindResponse(totalCount, result.count(), result)
     }
 }

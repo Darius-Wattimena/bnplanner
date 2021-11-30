@@ -24,7 +24,29 @@ data class Beatmap(
         val nominatedByBNOne: Boolean = false,
         val nominatedByBNTwo: Boolean = false,
         val unfinished: Boolean = false
-)
+) {
+    fun toFoundBeatmap(): FoundBeatmap {
+        return FoundBeatmap(
+            osuId,
+            artist,
+            title,
+            note,
+            mapper,
+            mapperId,
+            status,
+            nominators,
+            interested,
+            nominatedByBNOne,
+            nominatedByBNTwo
+        )
+    }
+}
+
+enum class BeatmapPage {
+    PENDING,
+    RANKED,
+    GRAVEYARD
+}
 
 enum class BeatmapStatus(val prio: Long) {
     Qualified(1),

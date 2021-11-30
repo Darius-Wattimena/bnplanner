@@ -4,7 +4,7 @@ import mu.KotlinLogging
 import nl.greaper.bnplanner.DiscordWebhookClient
 import nl.greaper.bnplanner.dataSource.BeatmapDataSource
 import nl.greaper.bnplanner.dataSource.UserDataSource
-import nl.greaper.bnplanner.model.FindResponse
+import nl.greaper.bnplanner.model.LegacyFindResponse
 import nl.greaper.bnplanner.model.beatmap.*
 import nl.greaper.bnplanner.model.discord.EmbedColor
 import nl.greaper.bnplanner.model.discord.EmbedFooter
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service
 import java.time.Instant
 
 @Service
-class BeatmapService(
+class LegacyBeatmapService(
         val dataSource: BeatmapDataSource,
         val userDataSource: UserDataSource,
         val osuService: OsuService,
@@ -135,7 +135,7 @@ class BeatmapService(
         )
     }
 
-    fun findBeatmaps(filter: BeatmapFilter): FindResponse<FoundBeatmap> {
+    fun findBeatmaps(filter: BeatmapFilter): LegacyFindResponse<FoundBeatmap> {
         val foundBeatmaps = dataSource.findAll(filter)
         val result = foundBeatmaps.response.map { beatmap ->
             FoundBeatmap(
@@ -153,7 +153,7 @@ class BeatmapService(
             )
         }
 
-        return FindResponse(
+        return LegacyFindResponse(
                 foundBeatmaps.total,
                 foundBeatmaps.count,
                 result,

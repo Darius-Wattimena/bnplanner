@@ -105,7 +105,7 @@ class StatisticsCalculations(
         return allStatistics
     }
 
-    @Scheduled(cron = "0 0 1 * * *")
+    //@Scheduled(cron = "0 0 1 * * *")
     fun calculateMonthlyUserStatistics() {
         val currentMonth = YearMonth.now()
         val lastMonth = currentMonth.minusMonths(1)
@@ -118,7 +118,7 @@ class StatisticsCalculations(
         userStatisticsDataSource.saveAll(statistics)
     }
 
-    @Scheduled(cron = "0 0 1 1 * *")
+    //@Scheduled(cron = "0 0 1 1 * *")
     fun calculateYearlyUserStatistics() {
         val currentYear = YearMonth.now()
         val lastYear = currentYear.minusYears(1)
@@ -126,21 +126,6 @@ class StatisticsCalculations(
         val endLastYear = currentYear.atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC)
 
         val statistics = generateUserStatistics(startLastYear, endLastYear, StatisticsType.YEARLY, startLastYear)
-        for (i in 1..12) { //TODO remove this, was used to generate test data
-            val monthStart = lastYear.withMonth(i)
-            val monthEnd = monthStart.plusMonths(1)
-            val instantMonthStart = monthStart.atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC)
-
-            val monthlyStatistics = generateUserStatistics(
-                    instantMonthStart,
-                    monthEnd.atDay(1).atStartOfDay().toInstant(ZoneOffset.UTC),
-                    StatisticsType.MONTHLY,
-                    instantMonthStart
-            )
-
-            userStatisticsDataSource.saveAll(monthlyStatistics)
-        }
-
         userStatisticsDataSource.saveAll(statistics)
     }
 
@@ -156,7 +141,7 @@ class StatisticsCalculations(
     }
 
     // Execute every day
-    @Scheduled(cron = "0 0 * * * *")
+    //@Scheduled(cron = "0 0 * * * *")
     fun calculateDailyStatistics() {
         val filter = BeatmapFilter(
                 artist = null,
@@ -229,7 +214,7 @@ class StatisticsCalculations(
                 timestamp = ZonedDateTime.now().toEpochSecond()
         )
 
-        statisticsDataSource.save(statistics)
+        statisticsDataSource.insert(statistics)
     }
 
 }
